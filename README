@@ -1,0 +1,19 @@
+The new meta operations that Mau-Dev provides (with respect to 
+the official Maude release) can be consulted in
+
+http://safe-tools.dsic.upv.es/maudev/
+
+Also, for Mau-Dev to run properly in Windows you need to install 
+Cygwin and add the ~\Cygwin\bin folder to the PATH variable of 
+your system. Note that after installing Cygwin and adding the bin 
+folder to your PATH you don't need to execute Mau-Dev from within 
+the Cygwin console itself; you can run it from the standard Windows 
+console of %windir%\system32\cmd.exe
+
+You can get a guide on how to install Cygwin in
+
+http://safe-tools.dsic.upv.es/maude/
+ 
+However, note that this is a compilation guide for Maude, and thus 
+explains how to install a lot of extra packages that you will not 
+need, since a default Cygwin installation will suffice.

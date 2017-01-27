@@ -1,0 +1,17 @@
+The Maude 2 interpreter source tree is
+Copyright 1997-2014 SRI International, Menlo Park, CA 94025, USA.
+
+The Maude 2 interpreter is free software. See the file COPYING for
+copying permission.
+
+For documentation and examples of the original Maude release, see the Maude website:
+http://maude.cs.uiuc.edu/
+
+
+                                MAU-DEV
+
+Mau-Dev is a developer extension of the Maude 2 interpreter developed by 
+the Extensions of Logic Programming group at the Universitat Politècnica de València.
+
+For documentation and examples of this extension, see the Maudev website:
+http://safe-tools.dsic.upv.es/maudev/
