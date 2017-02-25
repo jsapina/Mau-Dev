@@ -960,7 +960,7 @@ DagNode* MetaLevel::upString(const char* text, MixfixModule* m)
 	return new StringDagNode(stringSymbol,text);
 }
 
-DagNode* MetaLevel::upSubstitution(const Vector<RewritingContext*>& subvalues, const VariableInfo& variableInfo, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap)
+DagNode* MetaLevel::upSubstitution(const Vector<DagNode*>& substitution, const VariableInfo& variableInfo, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap)
 {
   int nrVariables = variableInfo.getNrRealVariables();
   if (nrVariables == 0)
@@ -969,7 +969,7 @@ DagNode* MetaLevel::upSubstitution(const Vector<RewritingContext*>& subvalues, c
     {
       return upAssignment(
     		  variableInfo.index2Variable(0),
-			  subvalues[0]->root(),
+			  substitution[0],
 			  m,
 			  qidMap,
 			  dagNodeMap);
@@ -979,7 +979,7 @@ DagNode* MetaLevel::upSubstitution(const Vector<RewritingContext*>& subvalues, c
     {
       args[i] = upAssignment(
     		     variableInfo.index2Variable(i),
-    		     subvalues[i]->root(),
+    		     substitution[i],
 			     m,
 			     qidMap,
 			     dagNodeMap);
@@ -1076,8 +1076,8 @@ DagNode* MetaLevel::upITrace(DagNode* dagNode, MixfixModule* m, Vector<Rewriting
 	eqIndex = contexts[i]->getEquation();
 	if (eqIndex == -1)
     {
-        lhs = downTerm(upDagNode(contexts[i]->getLHS(), m, qidMap, dagNodeMap), m);
-        rhs = downTerm(upDagNode(contexts[i]->getRHS(), m, qidMap, dagNodeMap), m);
+        lhs = downTerm(upDagNode(contexts[i]->getSavedLHS(), m, qidMap, dagNodeMap), m);
+        rhs = downTerm(upDagNode(contexts[i]->getSavedRHS(), m, qidMap, dagNodeMap), m);
         equation = new Equation(-1, lhs, rhs, false, noCondition);
     }
 	else if (eqIndex == -2)
@@ -1090,12 +1090,12 @@ DagNode* MetaLevel::upITrace(DagNode* dagNode, MixfixModule* m, Vector<Rewriting
     if (nholes > 0)
     	args.expandBy(nholes);
     if (eqIndex == -2){
-    	args[vIndex] = (upITraceStep(contexts[i]->root(), sc, contexts[i]->getSubstitution(), m, qidMap, dagNodeMap, contexts[i]->getLHS(), 1));
+    	args[vIndex] = (upITraceStep(contexts[i]->root(), sc, contexts[i]->getSavedSub(), m, qidMap, dagNodeMap, contexts[i]->getSavedLHS(), 1));
     	vIndex++;
     }
     else {
     	for(int j = 0; j <= nholes; j++){
-    		args[vIndex] = (upITraceStep(contexts[i]->root(), equation, contexts[i]->getSubstitution(), m, qidMap, dagNodeMap, contexts[i]->getLHS(), j+1));
+    		args[vIndex] = (upITraceStep(contexts[i]->root(), equation, contexts[i]->getSavedSub(), m, qidMap, dagNodeMap, contexts[i]->getSavedLHS(), j+1));
     		vIndex++;
     	}
     	if (eqIndex == -1){
@@ -1107,20 +1107,20 @@ DagNode* MetaLevel::upITrace(DagNode* dagNode, MixfixModule* m, Vector<Rewriting
   return (args.length() == 1) ? args[0] : itraceSymbol->makeDagNode(args);
 }
 
-DagNode* MetaLevel::upITraceStep(DagNode* context, Equation* equation, Vector<RewritingContext*> subvalues, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int nhole)
+DagNode* MetaLevel::upITraceStep(DagNode* context, Equation* equation, Vector<DagNode*> substitution, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int nhole)
 {
   static Vector<DagNode*> args(3);
   args[0] = upEq(equation, m, qidMap);
-  args[1] = upSubstitution(subvalues, *equation, m, qidMap, dagNodeMap);
+  args[1] = upSubstitution(substitution, *equation, m, qidMap, dagNodeMap);
   args[2] = upSuperContext(context, m, qidMap, dagNodeMap,redex,nhole).first;
   return itraceStepSymbol->makeDagNode(args);
 }
 
-DagNode* MetaLevel::upITraceStep(DagNode* context, SortConstraint* sc, Vector<RewritingContext*> subvalues, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int nhole)
+DagNode* MetaLevel::upITraceStep(DagNode* context, SortConstraint* sc, Vector<DagNode*> substitution, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int nhole)
 {
   static Vector<DagNode*> args(3);
   args[0] = upMb(sc, m, qidMap);
-  args[1] = upSubstitution(subvalues, *sc, m, qidMap, dagNodeMap);
+  args[1] = upSubstitution(substitution, *sc, m, qidMap, dagNodeMap);
   args[2] = upSuperContext(context, m, qidMap, dagNodeMap,redex,nhole).first;
   return itraceStepSymbol->makeDagNode(args);
 }

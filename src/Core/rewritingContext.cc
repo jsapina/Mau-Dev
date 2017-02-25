@@ -59,6 +59,16 @@ RewritingContext::markReachableNodes()
   int stackLength = redexStack.length();
   for (int i = 0; i < stackLength; i++)
     redexStack[i].node()->mark();
+
+  /*** BEGIN MAU-DEV ***/
+  for (int i = 0; i < savedSub.length(); i++)
+    if (savedSub[i] != 0)
+        savedSub[i]->mark();
+  if (savedLHS != 0)
+      savedLHS->mark();
+  if (savedRHS != 0)
+      savedRHS->mark();
+  /*** END MAU-DEV ***/
 }
 
 RewritingContext*
@@ -241,18 +251,18 @@ void RewritingContext::saveContext()
 	Substitution& original = *this;
 	int nrValues = original.getNrValues();
 	for(int i = 0; i < nrValues; i++)
-		savedContexts[savedContexts.length()-1]->savedSubstitution.append(original.value(i) != 0?(new RewritingContext(original.value(i)->copyReducible())):0);
+		savedContexts[savedContexts.length()-1]->savedSub.append(original.value(i) != 0?(original.value(i)->copyReducible()):0);
 }
 
 void RewritingContext::saveContext(DagNode* redex)
 {
 	savedContexts.append(makeSubcontext(rootNode->copyReducible(true)));
-	savedContexts[savedContexts.length()-1]->savedLHS = new RewritingContext(redex);;
+	savedContexts[savedContexts.length()-1]->savedLHS = redex;
 	/* Save copies of substitution values */
 	Substitution& original = *this;
 	int nrValues = original.getNrValues();
 	for(int i = 0; i < nrValues; i++)
-		savedContexts[savedContexts.length()-1]->savedSubstitution.append(original.value(i) != 0?(new RewritingContext(original.value(i)->copyReducible())):0);
+		savedContexts[savedContexts.length()-1]->savedSub.append(original.value(i) != 0?(original.value(i)->copyReducible()):0);
 }
 
 void RewritingContext::saveEquation(int eqIndex)
@@ -272,8 +282,8 @@ void RewritingContext::addBuiltIn(DagNode* lhs, DagNode* rhs)
 	rhs->setHole();
 	saveContext();
 	rhs->clearHole();
-	savedContexts[savedContexts.length()-1]->savedLHS = new RewritingContext(lhs);
-	savedContexts[savedContexts.length()-1]->savedRHS = new RewritingContext(rhs->copyReducible(true));
+	savedContexts[savedContexts.length()-1]->savedLHS = lhs;
+	savedContexts[savedContexts.length()-1]->savedRHS = rhs->copyReducible(true);
 	savedContexts[savedContexts.length()-1]->savedEquation = -1;
 }
 
@@ -283,23 +293,21 @@ void RewritingContext::addMemoized(DagNode* lhs, DagNode* rhs)
     rhs->setHole();
     saveContext();
     rhs->clearHole();
-    savedContexts[savedContexts.length()-1]->savedLHS = new RewritingContext(lhs);
-    savedContexts[savedContexts.length()-1]->savedRHS = new RewritingContext(rhs->copyReducible(true));
+    savedContexts[savedContexts.length()-1]->savedLHS = lhs;
+    savedContexts[savedContexts.length()-1]->savedRHS = rhs->copyReducible(true);
     savedContexts[savedContexts.length()-1]->savedEquation = -1;
 }
 
 void RewritingContext::startRecording(bool flag)
 {
 	savedContexts.clear();
-	savedSubstitution.clear();
-    membership = flag;
+	membership = flag;
 	recording = true;
 }
 
 void RewritingContext::stopRecording()
 {
 	savedContexts.clear();
-	savedSubstitution.clear();
 	recording = false;
     membership = false;
 }

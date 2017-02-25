@@ -132,11 +132,9 @@ public:
 
   /*** BEGIN MAU-DEV ***/
   const Vector<RewritingContext*>& getContexts() const;
-  DagNode* getEqLHS(); //equation LHS
-  DagNode* getEqRHS(); //equation RHS
-  const Vector<RewritingContext*>& getSubstitution() const;
-  DagNode* getLHS(); //builtIn and memoized LHS
-  DagNode* getRHS(); //builtIn and memoized RHS
+  const Vector<DagNode*>& getSavedSub() const;
+  DagNode* getSavedLHS(); //builtIn and memoized LHS
+  DagNode* getSavedRHS(); //builtIn and memoized RHS
 
   void saveContext();
   void saveContext(DagNode* redex);
@@ -197,12 +195,9 @@ private:
   
   /*** BEGIN MAU-DEV ***/
   Vector<RewritingContext*> savedContexts;
-  RewritingContext* savedEqLHS;
-  RewritingContext* savedEqRHS;
-  Vector<RewritingContext*> savedVariables;
-  Vector<RewritingContext*> savedSubstitution;
-  RewritingContext* savedLHS;
-  RewritingContext* savedRHS;
+  Vector<DagNode*> savedSub;
+  DagNode* savedLHS;
+  DagNode* savedRHS;
 
   bool recording;
   bool membership;
@@ -228,7 +223,9 @@ RewritingContext::RewritingContext(DagNode* root)
   
   /*** BEGIN MAU-DEV ***/
   savedContexts.clear();
-  savedSubstitution.clear();
+  savedSub.clear();
+  savedLHS = 0;
+  savedRHS = 0;
   recording = false;
   /*** END MAU-DEV ***/
 }
@@ -247,6 +244,14 @@ RewritingContext::RewritingContext(int substitutionSize)
 inline
 RewritingContext::~RewritingContext()
 {
+    /*** BEGIN MAU-DEV ***/
+    if (rootNode == 0)
+        return;  // limited use RewritingContext
+    savedContexts.clear();
+    savedSub.clear();
+    delete savedLHS;
+    delete savedRHS;
+    /*** END MAU-DEV ***/
 }
 
 inline DagNode*
@@ -334,6 +339,7 @@ RewritingContext::incrementVariantNarrowingCount(Int64 i)
 }
 
 
+
 inline void
 RewritingContext::clearCount()
 {
@@ -341,6 +347,8 @@ RewritingContext::clearCount()
   eqCount = 0;
   rlCount = 0;
 }
+
+
 
 inline void
 RewritingContext::addInCount(const RewritingContext& other)
@@ -392,29 +400,19 @@ inline const Vector<RewritingContext*>& RewritingContext::getContexts() const
   return savedContexts;
 }
 
-inline DagNode* RewritingContext::getEqLHS()
+inline const Vector<DagNode*>& RewritingContext::getSavedSub() const
 {
-  return savedEqLHS->root();
+  return savedSub;
 }
 
-inline DagNode* RewritingContext::getEqRHS()
+inline DagNode* RewritingContext::getSavedLHS()
 {
-  return savedEqRHS->root();
+  return savedLHS;
 }
 
-inline const Vector<RewritingContext*>& RewritingContext::getSubstitution() const
+inline DagNode* RewritingContext::getSavedRHS()
 {
-  return savedSubstitution;
-}
-
-inline DagNode* RewritingContext::getLHS()
-{
-  return savedLHS->root();
-}
-
-inline DagNode* RewritingContext::getRHS()
-{
-  return savedRHS->root();
+  return savedRHS;
 }
 
 inline bool RewritingContext::builtInReplaceRecord(DagNode* old, DagNode* replacement)

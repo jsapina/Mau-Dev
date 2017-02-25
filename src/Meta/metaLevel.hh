@@ -206,10 +206,10 @@ public:
   DagNode* upNoIdentity();
   DagNode* upIdentity(MixfixModule* m,Symbol* symbol,PointerMap& qidMap);
   DagNode* upITrace(DagNode* dagNode, MixfixModule* m, const Vector<RewritingContext*> contexts);
-  DagNode* upITraceStep(DagNode* context, Equation* equation, Vector<RewritingContext*> substitution, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int idx);
-  DagNode* upITraceStep(DagNode* context, SortConstraint* sc, Vector<RewritingContext*> substitution, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int idx);
+  DagNode* upITraceStep(DagNode* context, Equation* equation, Vector<DagNode*> substitution, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int idx);
+  DagNode* upITraceStep(DagNode* context, SortConstraint* sc, Vector<DagNode*> substitution, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* redex, int idx);
   pair<DagNode*, int> upSuperContext(DagNode* dagNode, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap, DagNode* lhs, int idx);
-  DagNode* upSubstitution(const Vector<RewritingContext*>& subvalues, const VariableInfo& variableInfo, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap);
+  DagNode* upSubstitution(const Vector<DagNode*>& substitution, const VariableInfo& variableInfo, MixfixModule* m, PointerMap& qidMap, PointerMap& dagNodeMap);
   DagNode* upOutermost(DagNode* dagNode, MixfixModule* m, PointerMap& qidMap);
   /*** END MAU-DEV ***/
 
