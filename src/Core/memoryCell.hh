@@ -113,11 +113,8 @@ private:
 
   enum Flags
   {
-    //MARKED = 64,	// marked in most recent mark phase
-    MARKED = 128,	// marked in most recent mark phase //MAU-DEV
-    
-    //CALL_DTOR = 128	// call DagNode::~DagNode() before reusing
-    CALL_DTOR = 256	// call DagNode::~DagNode() before reusing //MAU-DEV
+    MARKED = 64,	// marked in most recent mark phase
+    CALL_DTOR = 128	// call DagNode::~DagNode() before reusing
   };
 
   enum MemoryManagementParameters

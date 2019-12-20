@@ -228,11 +228,11 @@ private:
     //CACHED = 16,	// node exists as part of a cache
     GROUND_FLAG = 16,	// no variables occur below this node
     HASH_VALID = 32,	// node has a valid hash value (storage is theory dependent)
-    HOLE = 64, //MAU-DEV
     //
     //	We can share a the same bit for this flag since the rule rewriting strategy that needs UNREWRITABLE will
     //	never be combined with variant narrowing.
     //
+    HOLE = 4, //MAU-DEV
     IRREDUCIBLE_BY_VARIANT_EQUATIONS = 4
   };
 

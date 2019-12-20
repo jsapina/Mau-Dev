@@ -1,8 +1,8 @@
 #!/bin/bash
 ../configure \
 --with-cvc4=no \
-CFLAGS="-Wall -O2 -static-libstdc++ -static-libgcc -fno-crossjumping -fno-stack-protector -fstrict-aliasing -finline-limit=10000" \
-CXXFLAGS="-Wall -O2 -static-libstdc++ -static-libgcc -fno-crossjumping -fno-stack-protector -fstrict-aliasing -finline-limit=10000" \
+CFLAGS="-Wall -O3 -fno-stack-protector -fstrict-aliasing" \
+CXXFLAGS="-Wall -O3 -fno-stack-protector -fstrict-aliasing" \
 CPPFLAGS="-I/usr/local/include" \
 LDFLAGS="-static -L/usr/local/lib" \
 BUDDY_LIB="/usr/local/lib/libbdd.a" \

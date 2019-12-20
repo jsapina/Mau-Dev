@@ -202,7 +202,7 @@ public:
 		      Vector<Term*>& values);
 
   /*** BEGIN MAU-DEV ***/
-  DagNode* upString(const char* text,MixfixModule* m);
+  DagNode* upString(const char* text);
   DagNode* upNoIdentity();
   DagNode* upIdentity(MixfixModule* m,Symbol* symbol,PointerMap& qidMap);
   DagNode* upITrace(DagNode* dagNode, MixfixModule* m, const Vector<RewritingContext*> contexts);

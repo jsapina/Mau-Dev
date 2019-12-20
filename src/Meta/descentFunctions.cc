@@ -754,7 +754,7 @@ bool MetaLevelOpSymbol::metaString(FreeDagNode* subject, RewritingContext& conte
 			string str = buffer.str();
 			const char* text = str.c_str();
 			t->deepSelfDestruct();
-			return context.builtInReplace(subject, metaLevel->upString(text,m));
+			return context.builtInReplace(subject, metaLevel->upString(text));
 		}
 	}
 	return false;
@@ -771,7 +771,7 @@ bool MetaLevelOpSymbol::metaMap(FreeDagNode* subject, RewritingContext& context)
 			string str = buffer.str();
 			const char* text = str.c_str();
 			t->deepSelfDestruct();
-			return context.builtInReplace(subject, metaLevel->upString(text,m));
+			return context.builtInReplace(subject, metaLevel->upString(text));
 		}
 	}
 	return false;

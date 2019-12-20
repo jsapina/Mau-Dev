@@ -955,7 +955,7 @@ MetaLevel::upSMT_Number(const mpq_class& value, Symbol* symbol, MixfixModule* m,
 }
 
 /*** BEGIN MAU-DEV ***/
-DagNode* MetaLevel::upString(const char* text, MixfixModule* m)
+DagNode* MetaLevel::upString(const char* text)
 {
 	return new StringDagNode(stringSymbol,text);
 }

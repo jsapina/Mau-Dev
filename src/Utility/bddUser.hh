@@ -48,7 +48,7 @@ private:
   {
     DEFAULT_NODE_SIZE = 1000,
     DEFAULT_CACHE_SIZE = 100,
-    DEFAULT_NR_VARIABLES = 10
+    DEFAULT_NR_VARIABLES = 10000 //BuDDy fix
   };
 
   static void gc_handler(int pre, bddGbcStat* stat);

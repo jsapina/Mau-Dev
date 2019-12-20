@@ -217,7 +217,7 @@ SuccSymbol::rewriteToNat(DagNode* subject, RewritingContext& context, const mpz_
   DagNode* zero = zeroTerm.getDag();
   if (result == 0)
     //return context.builtInReplace(subject, zero);
-    return context.builtInReplace(subject, zero); //MAU-DEV
+    return context.builtInReplaceRecord(subject, zero); //MAU-DEV
 
   bool trace = RewritingContext::getTraceStatus();
   if (trace)
