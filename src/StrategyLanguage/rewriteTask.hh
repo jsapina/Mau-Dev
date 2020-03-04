@@ -27,7 +27,6 @@
 #ifndef _rewriteTask_hh_
 #define _rewriteTask_hh_
 #include "strategicTask.hh"
-#include "strategyStackManager.hh"
 
 class RewriteTask : public StrategicTask
 {
@@ -35,7 +34,7 @@ class RewriteTask : public StrategicTask
 
 public:
   RewriteTask(StrategicSearch& searchObject,
-	      SharedRewriteSearchState::Ptr rewriteState,
+	      SharedValue<RewriteSearchState> rewriteState,
 	      PositionState::PositionIndex redexIndex,
 	      ExtensionInfo* extensionInfo,
 	      Substitution* substitutionSoFar,
@@ -55,7 +54,7 @@ public:
 
 private:
   const HashConsSet& hashConsSet;			// reference to shared hash cons set
-  SharedRewriteSearchState::Ptr rewriteState;		// smart pointer to rewrite state that found our redex
+  SharedValue<RewriteSearchState> rewriteState;		// smart pointer to rewrite state that found our redex
   const PositionState::PositionIndex redexIndex;	// index of redex withing rewrite state
   ExtensionInfo* extensionInfoCopy;			// copy of extension info from original match
   Rule* const rule;					// pointer to rule whose lhs matched

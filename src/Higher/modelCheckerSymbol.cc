@@ -289,7 +289,6 @@ ModelCheckerSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
     : trueTerm.getDag();
   context.addInCount(*sysContext);
   delete system.systemStates;  // deletes sysContext via ~StateTransitionGraph()
-  //return context.builtInReplace(subject, resultDag);
   return context.builtInReplaceRecord(subject, resultDag); //MAU-DEV
 }
 

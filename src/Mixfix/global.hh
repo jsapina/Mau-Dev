@@ -36,7 +36,7 @@ extern string executableDirectory;
 extern bool alwaysAdviseFlag;
 
 #define PRELUDE_NAME	"prelude.maude"
-#define MAUDE_LIB	"MAUDE_LIB"
+#define MAUDEV_LIB	"MAUDEV_LIB"
 
 bool
 findPrelude(string& directory, string& fileName);

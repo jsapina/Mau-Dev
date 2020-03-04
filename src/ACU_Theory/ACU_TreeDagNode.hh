@@ -44,9 +44,6 @@ public:
   DagNode* copyWithReplacement(Vector<RedexPosition>& redexStack,
 			       int first,
 			       int last);
-  void stackArguments(Vector<RedexPosition>& stack,
-		      int parentIndex,
-		      bool respectFrozen);
   //
   //	Member functions required to handle extension information.
   //
@@ -81,8 +78,8 @@ private:
   //	Theory interface functions.
   //
   DagNode* markArguments();
-  //DagNode* copyEagerUptoReduced2();
   DagNode* copyEagerUptoReduced2(const bool flag); //MAU-DEV
+  DagNode* copyAll2();
   void clearCopyPointers2();
   //
   //	Arguments under ACU symbol.

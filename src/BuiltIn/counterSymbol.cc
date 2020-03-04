@@ -82,6 +82,7 @@ CounterSymbol::resetRules()
   NumberOpSymbol::resetRules();
 }
 
+/*
 void
 CounterSymbol::saveHiddenState()
 {
@@ -96,6 +97,7 @@ CounterSymbol::restoreHiddenState()
   currentValueStack.pop();
   NumberOpSymbol::restoreHiddenState();
 }
+*/
 
 bool
 CounterSymbol::eqRewrite(DagNode* subject, RewritingContext& context)

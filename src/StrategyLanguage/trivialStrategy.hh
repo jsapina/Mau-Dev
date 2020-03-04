@@ -33,6 +33,9 @@ public:
   TrivialStrategy(bool result);
   bool getResult() const;
 
+  bool check(VariableInfo& indices, const TermSet& boundVars);
+  void process();
+
   StrategicExecution::Survival decompose(StrategicSearch& searchObject, DecompositionProcess* remainder);
 
 private:

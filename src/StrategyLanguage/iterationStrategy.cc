@@ -49,6 +49,18 @@ IterationStrategy::~IterationStrategy()
   delete (star != 0 ? star : child);
 }
 
+bool
+IterationStrategy::check(VariableInfo& indices, const TermSet& boundVars)
+{
+  return child->check(indices, boundVars);
+}
+
+void
+IterationStrategy::process()
+{
+  child->process();
+}
+
 StrategicExecution::Survival
 IterationStrategy::decompose(StrategicSearch& searchObject, DecompositionProcess* remainder)
 {

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+MAUDEV_LIB=$srcdir/../../src/Main
+export MAUDEV_LIB
+
+../../src/Main/maude \
+  < $srcdir/instantiationJuly2019.maude -no-banner -no-advise \
+  > instantiationJuly2019.out 2>&1
+
+diff $srcdir/instantiationJuly2019.expected instantiationJuly2019.out > /dev/null 2>&1

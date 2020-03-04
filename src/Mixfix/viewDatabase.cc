@@ -31,6 +31,7 @@
 //      forward declarations
 #include "interface.hh"
 #include "core.hh"
+#include "strategyLanguage.hh"
 #include "mixfix.hh"
 
 //	front end class definitions
@@ -79,8 +80,8 @@ ViewDatabase::deleteView(int name)
 }
 
 void
-ViewDatabase::showNamedViews() const
+ViewDatabase::showNamedViews(ostream& s) const
 {
   FOR_EACH_CONST(i, ViewMap, viewMap)
-    cout << "view " << static_cast<NamedEntity*>(i->second) << '\n';
+    s << "view " << static_cast<NamedEntity*>(i->second) << '\n';
 }

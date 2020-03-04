@@ -54,8 +54,13 @@ NA_DagNode::markArguments()
 }
 
 DagNode*
-//NA_DagNode::copyEagerUptoReduced2()
 NA_DagNode::copyEagerUptoReduced2(const bool flag) //MAU-DEV
+{
+  return makeClone();
+}
+
+DagNode*
+NA_DagNode::copyAll2()
 {
   return makeClone();
 }
@@ -79,11 +84,4 @@ NA_DagNode::copyWithReplacement(Vector<RedexPosition>& /* redexStack  */,
 {
   CantHappen("should never be called");
   return 0;
-}
-
-void
-NA_DagNode::stackArguments(Vector<RedexPosition>& /* stack */,
-			   int /* parentIndex */,
-			   bool /* respectFrozen */)
-{
 }

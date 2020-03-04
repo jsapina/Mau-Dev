@@ -134,6 +134,8 @@ StringOpSymbol::getDataAttachments(const Vector<Sort*>& opDeclaration,
     CODE_CASE(d, 'f', 'l', "float")
     CODE_CASE(d, 'l', 'e', "length")
     CODE_CASE(d, 'a', 's', "ascii")
+    CODE_CASE(d, 'u', 'p', "upperCase")
+    CODE_CASE(d, 'l', 'o', "lowerCase")
     CODE_CASE(d, '+', 0, "+")
     CODE_CASE(d, '<', 0, "<")
     CODE_CASE(d, '<', '=', "<=")
@@ -241,6 +243,16 @@ StringOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 		  r = static_cast<unsigned char>(left[0]);
 		  break;
 		}
+	      case CODE('u', 'p'):  // upperCase
+		{
+		  Rope result = upperCase(left);
+		  return rewriteToString(subject, context, result);
+		}
+	      case CODE('l', 'o'):  // lowerCase
+		{
+		  Rope result = lowerCase(left);
+		  return rewriteToString(subject, context, result);
+		}
 	      default:
 		CantHappen("bad string op");
 	      }
@@ -279,8 +291,7 @@ StringOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 		  }
 		Assert(trueTerm.getTerm() != 0 && falseTerm.getTerm() != 0,
 		       "null true/false for relational op");
-		//return context.builtInReplace(subject, r ? trueTerm.getDag() : falseTerm.getDag());
-        return context.builtInReplaceRecord(subject, r ? trueTerm.getDag() : falseTerm.getDag()); //MAU-DEV
+		return context.builtInReplaceRecord(subject, r ? trueTerm.getDag() : falseTerm.getDag()); //MAU-DEV
 	      }
 	    else if (op == CODE('r', 'a'))
 	      {
@@ -305,8 +316,7 @@ StringOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 			      }
 			    else
 			      r = divisionSymbol->makeRatDag(numerator, denominator);
-			    //return context.builtInReplace(subject, r);
-                return context.builtInReplaceRecord(subject, r); //MAU-DEV
+			    return context.builtInReplaceRecord(subject, r); //MAU-DEV
 			  }
 			else
 			  DebugAdvisory("StringOpSymbol::eqRewrite() rope to number failed " << subject);
@@ -366,8 +376,7 @@ StringOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 			    }
 			  Assert(notFoundTerm.getTerm() != 0, "null notFound for find op");
 			  if (r == NONE)
-			    //return context.builtInReplace(subject, notFoundTerm.getDag());
-                return context.builtInReplaceRecord(subject, notFoundTerm.getDag()); //MAU-DEV
+			    return context.builtInReplaceRecord(subject, notFoundTerm.getDag()); //MAU-DEV
 			  return succSymbol->rewriteToNat(subject, context, r);
 			}
 		    }
@@ -404,8 +413,7 @@ StringOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 	      args.append(new StringDagNode(stringSymbol, buffer));
 	      args.append((decPt < 0) ? minusSymbol->makeNegDag(decPt) :
 			  succSymbol->makeNatDag(decPt));
-	      //return context.builtInReplace(subject, decFloatSymbol->makeDagNode(args));
-          return context.builtInReplaceRecord(subject, decFloatSymbol->makeDagNode(args)); //MAU-DEV
+	      return context.builtInReplaceRecord(subject, decFloatSymbol->makeDagNode(args)); //MAU-DEV
 	    }
 	}
     } 
@@ -632,4 +640,50 @@ StringOpSymbol::ropeToNumber(const Rope& subject,
   bool result = (mpz_set_str(numerator.get_mpz_t(), numStr, base) == 0);
   delete [] numStr;
   return result;
+}
+
+Rope
+StringOpSymbol::upperCase(const Rope& subject)
+{
+  Rope::const_iterator b(subject.begin());
+  Rope::const_iterator e(subject.end());
+  for (Rope::const_iterator i(b); i != e; ++i)
+    {
+      char c = *i;
+      if (islower(c))
+	{
+	  //
+	  //	At least one lower-case character exists - need to convert.
+	  //
+	  Rope result(subject.substr(0, i - b));  // characters before *i
+	  result += toupper(c);
+	  for (++i; i != e; ++i)
+	    result += toupper(*i);
+	  return result;
+	}
+    }
+  return subject;  // no lower-case characters to convert
+}
+
+Rope
+StringOpSymbol::lowerCase(const Rope& subject)
+{
+  Rope::const_iterator b(subject.begin());
+  Rope::const_iterator e(subject.end());
+  for (Rope::const_iterator i(b); i != e; ++i)
+    {
+      char c = *i;
+      if (isupper(c))
+	{
+	  //
+	  //	At least one upper-case character exists - need to convert.
+	  //
+	  Rope result(subject.substr(0, i - b));  // characters before *i
+	  result += tolower(c);
+	  for (++i; i != e; ++i)
+	    result += tolower(*i);
+	  return result;
+	}
+    }
+  return subject;  // no lower-case characters to convert
 }

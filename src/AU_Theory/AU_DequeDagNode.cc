@@ -116,11 +116,21 @@ AU_DequeDagNode::markArguments()
 }
 
 DagNode*
-//AU_DequeDagNode::copyEagerUptoReduced2()
 AU_DequeDagNode::copyEagerUptoReduced2(const bool flag) //MAU-DEV
 {
-  //return dequeToArgVec(this)->copyEagerUptoReduced2();
+  //
+  //	Don't both trying to preserve deque in the case of
+  //	a lazy operator, since we cannot do greedy matching with
+  //	extension we will be forced to ArgVec representation when
+  //	we try to reduce at this node.
+  //
   return dequeToArgVec(this)->copyEagerUptoReduced2(flag); //MAU-DEV
+}
+
+DagNode*
+AU_DequeDagNode::copyAll2()
+{
+  return dequeToArgVec(this)->copyAll2();
 }
 
 void
@@ -158,22 +168,6 @@ AU_DequeDagNode::copyWithReplacement(Vector<RedexPosition>& redexStack,
 				     int last)
 {
   return dequeToArgVec(this)->copyWithReplacement(redexStack, first, last);
-}
-
-void
-AU_DequeDagNode::stackArguments(Vector<RedexPosition>& stack,
-				int parentIndex,
-				bool respectFrozen)
-{
-  if (respectFrozen && !(symbol()->getFrozen().empty()))
-    return;
-  int j = 0;
-  for (AU_DequeIter i(deque); i.valid(); i.next(), ++j)
-    {
-       DagNode* d = i.getDagNode();
-      if (!(d->isUnstackable()))
-	stack.append(RedexPosition(d, parentIndex, j));
-    }
 }
 
 ExtensionInfo*

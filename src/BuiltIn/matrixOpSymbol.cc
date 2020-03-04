@@ -357,8 +357,7 @@ MatrixOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
       Vector<DagNode*> args(2);
       args[0] = upSet(inhomogenous);
       args[1] = inhomogenous.empty() ? args[0] : upSet(homogenous);
-      //return context.builtInReplace(subject, vectorSetPairSymbol->makeDagNode(args));
-      return context.builtInReplaceRecord(subject, vectorSetPairSymbol->makeDagNode(args));  //MAU-DEV
+      return context.builtInReplaceRecord(subject, vectorSetPairSymbol->makeDagNode(args)); //MAU-DEV
     }
   //
   //	NumberOpSymbol doesn't know how to deal with this.

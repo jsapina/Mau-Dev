@@ -45,13 +45,18 @@ public:
   VariantFolder();
   ~VariantFolder();
 
-  bool insertVariant(const Vector<DagNode*>& variant, int index, int parentIndex);
+  bool insertVariant(const Vector<DagNode*>& variantExtOld, const Vector<DagNode*>& variantExtSub, int variantEq, const Vector<DagNode*>& variant, int index, int parentIndex, int variableFamily); //MAU-DEV
   //
   //	Returns 0 if variant wasn't retained or was later purged.
   //
   const Vector<DagNode*>* getVariant(int index) const;
 
-  const Vector<DagNode*>* getNextSurvivingVariant(int& nrFreeVariables,
+  const Vector<DagNode*>* getNextSurvivingVariant(
+                          Vector<DagNode*>& variantExtOld, //MAU-DEV
+                          Vector<DagNode*>& variantExtSub, //MAU-DEV
+                          int& variantEq, //MAU-DEV
+                          int& nrFreeVariables,
+						  int& variableFamily,
 						  int* variantNumber = 0,
 						  int* parentNumber = 0,
 						  bool* moreInLayer = 0);
@@ -59,7 +64,12 @@ public:
   //	Returns the last variant returned by the above function, as long as
   //	no intervening call to insertVariant() has taken place (which could purge it).
   //
-  const Vector<DagNode*>* getLastReturnedVariant(int& nrFreeVariables,
+  const Vector<DagNode*>* getLastReturnedVariant(
+                         Vector<DagNode*>& variantExtOld, //MAU-DEV
+                         Vector<DagNode*>& variantExtSub, //MAU-DEV
+                         int& variantEq, //MAU-DEV
+                         int& nrFreeVariables,
+						 int& variableFamily,
 						 int* parentNumber = 0,
 						 bool* moreInLayer = 0);
 
@@ -72,11 +82,16 @@ private:
   
     int nrVariables;  // number of variables needed for matching; includes any abstraction variables
     int nrFreeVariables;  // number of variables occuring in variant
+    int variableFamily;
     int parentIndex;
     Vector<DagNode*> variant;
     Vector<Term*> terms;
     Vector<LhsAutomaton*> matchingAutomata;
     int layerNumber;
+    
+    Vector<DagNode*> variantExtOld; //MAU-DEV
+    Vector<DagNode*> variantExtSub; //MAU-DEV
+    int variantEq; //MAU-DEV
   };
 
   typedef map<int, RetainedVariant*> RetainedVariantMap;

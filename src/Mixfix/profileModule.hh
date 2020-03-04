@@ -38,9 +38,11 @@ public:
   void profileMbRewrite(DagNode* redex, const SortConstraint* mb);
   void profileEqRewrite(DagNode* redex, const Equation* eq, int type);
   void profileRlRewrite(DagNode* redex, const Rule* rl);
+  void profileSdRewrite(DagNode* redex, const StrategyDefinition* sd);
   void profileMbConditionStart(const SortConstraint* mb);
   void profileEqConditionStart(const Equation* eq);
   void profileRlConditionStart(const Rule* rl);
+  void profileSdConditionStart(const StrategyDefinition* sdef);
   void profileFragment(const PreEquation* preEquation, int fragmentIndex, bool success);
   void showProfile(ostream& s) const;
 
@@ -85,6 +87,7 @@ private:
   Vector<StatementProfile> mbInfo;
   Vector<StatementProfile> eqInfo;
   Vector<StatementProfile> rlInfo;
+  Vector<StatementProfile> sdInfo;
 };
 
 #endif

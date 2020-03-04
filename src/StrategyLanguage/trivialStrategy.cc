@@ -21,7 +21,7 @@
 */
 
 //
-//      Implementation for abstract class Strategy.
+//      Implementation for the trivial strategy.
 //
 
 //	utility stuff
@@ -39,6 +39,17 @@
 
 TrivialStrategy::TrivialStrategy(bool result)
   : result(result)
+{
+}
+
+bool
+TrivialStrategy::check(VariableInfo&, const TermSet&)
+{
+  return true;
+}
+
+void
+TrivialStrategy::process()
 {
 }
 

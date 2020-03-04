@@ -47,6 +47,7 @@ public:
   Substitution(int size, int cSize);  // rewriting contexts
   static void notify(int size);
   int getNrValues() const; //MAU-DEV
+
   void clear(long size);
   void finished();
   DagNode* value(int index) const;
@@ -81,7 +82,6 @@ Substitution::Substitution(int size, int cSize) : values(size)
   DebugAdvisoryCheck(size != 0, "made a zero length substitution");
   copySize = cSize;
 }
-
 
 inline void
 Substitution::clear(long size)

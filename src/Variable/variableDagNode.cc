@@ -61,7 +61,7 @@ VariableDagNode::getHashValue()
 int
 VariableDagNode::compareArguments(const DagNode* other) const
 {
-  return id() - safeCast(const VariableDagNode*, other)->id();
+  return id() - safeCastNonNull<const VariableDagNode*>(other)->id();
 }
 
 DagNode*
@@ -71,7 +71,6 @@ VariableDagNode::markArguments()
 }
 
 DagNode*
-//VariableDagNode::copyEagerUptoReduced2()
 VariableDagNode::copyEagerUptoReduced2(const bool flag) //MAU-DEV
 {
   //return new VariableDagNode(symbol(), id(), index);
@@ -81,6 +80,12 @@ VariableDagNode::copyEagerUptoReduced2(const bool flag) //MAU-DEV
         res->setHole();
   return res;
   /*** END MAU-DEV ***/
+}
+
+DagNode*
+VariableDagNode::copyAll2()
+{
+  return new VariableDagNode(symbol(), id(), index);
 }
 
 void
@@ -122,19 +127,12 @@ VariableDagNode::copyWithReplacement(Vector<RedexPosition>& /* redexStack  */,
   return 0;
 }
 
-void
-VariableDagNode::stackArguments(Vector<RedexPosition>& /* stack */,
-				int /* parentIndex */,
-				bool /* respectFrozen */)
-{
-}
-
 //
 //	Unification code.
 //
 
 DagNode::ReturnResult
-VariableDagNode::computeBaseSortForGroundSubterms()
+VariableDagNode::computeBaseSortForGroundSubterms(bool /* warnAboutUnimplemented */)
 {
   return NONGROUND;
 }

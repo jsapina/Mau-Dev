@@ -64,6 +64,22 @@ BranchStrategy::~BranchStrategy()
   delete failureStrategy;
 }
 
+bool
+BranchStrategy::check(VariableInfo& indices, const TermSet& boundVars)
+{
+  return initialStrategy->check(indices, boundVars)
+    && (!successStrategy || successStrategy->check(indices, boundVars))
+    && (!failureStrategy || failureStrategy->check(indices, boundVars));
+}
+
+void
+BranchStrategy::process()
+{
+  initialStrategy->process();
+  if (successStrategy) successStrategy->process();
+  if (failureStrategy) failureStrategy->process();
+}
+
 StrategicExecution::Survival
 BranchStrategy::decompose(StrategicSearch& searchObject, DecompositionProcess* remainder)
 {

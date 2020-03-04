@@ -178,7 +178,8 @@ SortTable::buildCtorDiagram()
     {
       bool unique;
       ctorDiagram.append(containsConstructor(all, unique));
-      WarningCheck(unique, "constructor declarations for constant " << QUOTE(safeCast(Symbol*, this)) <<
+      WarningCheck(unique, "constructor declarations for constant " <<
+		   QUOTE(safeCastNonNull<Symbol*>(this)) <<
 		   " are inconsistant.");
       return;
     }

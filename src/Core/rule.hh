@@ -45,8 +45,16 @@ public:
   LhsAutomaton* getNonExtLhsAutomaton();
   LhsAutomaton* getExtLhsAutomaton();
   void print(ostream& s) const;
+  bool isNarrowing() const;
+  void setNarrowing();
+  void clearNarrowing();
 
 private:
+  enum Flags
+  {
+    NARROWING = 0x100
+  };
+
   int traceBeginTrial(DagNode* subject, RewritingContext& context) const;
 
   Term* rhs;
@@ -66,6 +74,24 @@ inline const RhsBuilder&
 Rule::getRhsBuilder() const
 {
   return builder;
+}
+
+inline bool
+Rule::isNarrowing() const
+{
+  return getFlag(NARROWING);
+}
+
+inline void
+Rule::setNarrowing()
+{
+  setFlags(NARROWING);
+}
+
+inline void
+Rule::clearNarrowing()
+{
+  clearFlags(NARROWING);
 }
 
 //

@@ -181,7 +181,6 @@ SatSolverSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
   Verbose("SatSolverSymbol: Generalized Buchi automaton has " <<
 	  nrStates << " state" << pluralize(nrStates) << " and " <<
 	  nrFairnessSets << " fairness set" << pluralize(nrFairnessSets) << '.');
-  //return context.builtInReplace(subject, resultDag);
   return context.builtInReplaceRecord(subject, resultDag); //MAU-DEV
 }
 

@@ -102,7 +102,7 @@ NA_Term::dagify2()
 }
 
 void
-NA_Term::findAvailableTerms(TermBag& /* availableTerm */s,
+NA_Term::findAvailableTerms(TermBag& /* availableTerm */,
 			    bool /* eagerContext */,
 			    bool /* atTop */)
 {

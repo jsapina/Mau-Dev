@@ -34,6 +34,7 @@
 #include "strategyLanguage.hh"
 
 //	strategy language class definitions
+#include "strategyExpression.hh"
 #include "strategyStackManager.hh"
 
 StrategyStackManager::StrategyStackManager()
@@ -59,7 +60,7 @@ StrategyStackManager::push(StackId stackId, StrategyExpression* strategy)
       //	but for the moment we just use pointers for simplicity. We don't expect too many
       //	sucessors to a given stack otherwise hashing might be a win.
       //
-      if (stackTable[i].strategy == strategy)
+      if (stackTable[i].strategy->equal(*strategy))
 	return i;
     }
   StackId newStackId = stackTable.size();

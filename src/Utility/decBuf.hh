@@ -53,7 +53,7 @@ DecBuf::zero()
 inline void
 DecBuf::insertDigit(int d)
 {
-  Assert(d >= 0 && d <= 9, cerr << "bad digit");
+  Assert(d >= 0 && d <= 9, "bad digit");
   buf.push_front(d);
 }
 

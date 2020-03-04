@@ -52,6 +52,9 @@ public:
   Action getSuccessAction() const;
   Action getFailureAction() const;
 
+  bool check(VariableInfo& indices, const TermSet& boundVars);
+  void process();
+
   StrategicExecution::Survival decompose(StrategicSearch& searchObject, DecompositionProcess* remainder);
 
 private:

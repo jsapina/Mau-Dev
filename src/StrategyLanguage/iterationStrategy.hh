@@ -35,6 +35,10 @@ public:
 
   StrategyExpression* getStrategy() const;
   bool getZeroAllowed() const;
+
+  bool check(VariableInfo& indices, const TermSet& boundVars);
+  void process();
+
   StrategicExecution::Survival decompose(StrategicSearch& searchObject, DecompositionProcess* remainder);
 
 private:

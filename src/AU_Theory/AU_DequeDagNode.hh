@@ -46,9 +46,6 @@ public:
   DagNode* copyWithReplacement(Vector<RedexPosition>& redexStack,
 			       int first,
 			       int last);
-  void stackArguments(Vector<RedexPosition>& stack,
-		      int parentIndex,
-		      bool respectFrozen);
   //
   //	Functions required to handle extension information.
   //
@@ -73,8 +70,8 @@ private:
   //	Functions required by theory interface.
   //
   DagNode* markArguments();
-  //DagNode* copyEagerUptoReduced2();
   DagNode* copyEagerUptoReduced2(const bool flag); //MAU-DEV
+  DagNode* copyAll2();
   void clearCopyPointers2();
 
   AU_Deque deque;

@@ -37,30 +37,6 @@ using namespace std;
 #include "timeStuff.hh"
 #include "tty.hh"
 
-/*
-void
-printBanner(std::ostream& s)
-{
-  struct timeval t;
-  gettimeofday(&t, 0);
-  time_t secs = t.tv_sec;
- 
-  s << "\t\t     \\||||||||||||||||||/\n";
-  s << "\t\t   --- Welcome to " <<
-    Tty(Tty::RED) << 'M' <<
-    Tty(Tty::CYAN) << 'a' <<
-    Tty(Tty::BLUE) << 'u' <<
-    Tty(Tty::MAGENTA) << 'd' <<
-    Tty(Tty::GREEN) << 'e' <<
-    Tty(Tty::RESET) << " ---\n";
-  s << "\t\t     /||||||||||||||||||\\\n";
-  s << "\t   " << PACKAGE_STRING << " built: " <<
-    __DATE__ << ' ' << __TIME__ << '\n';
-  s << "\t    Copyright 1997-2016 SRI International\n";
-  s << "\t\t   " << ctime(&secs);
-}
-*/
-
 void
 printBanner(std::ostream& s) //MAU-DEV (many changes)
 {
@@ -76,12 +52,12 @@ printBanner(std::ostream& s) //MAU-DEV (many changes)
     Tty(Tty::WHITE) << '-' <<
     Tty(Tty::MAGENTA) << 'D' <<
     Tty(Tty::GREEN) << 'e' <<
-	Tty(Tty::YELLOW) << 'v' << 
+    Tty(Tty::YELLOW) << 'v' <<
     Tty(Tty::RESET) << " ---\n";
   s << "\t\t    /||||||||||||||||||||\\\n";
-  s << "\t   " << "Mau-Dev 2.7.1 built " <<
+  s << "\t  " << " Mau-Dev 3.0 built: " <<
     __DATE__ << ' ' << __TIME__ << '\n';
-  s << "\t    Copyright 1997-2016 SRI International\n";
-  s << "\t       Developer Extension by ELP-DSIC\n";
+  s << "\t    Copyright 1997-2020 SRI International\n";
+  s << "\t      Developer Extension by ELP-VRAIN\n";
   s << "\t\t   " << ctime(&secs);
 }

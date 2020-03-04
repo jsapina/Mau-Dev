@@ -65,6 +65,7 @@ RuleTable::resetRules()
   nextRule = 0;
 }
 
+/*
 void
 RuleTable::saveHiddenState()
 {
@@ -77,6 +78,7 @@ RuleTable::restoreHiddenState()
   nextRule = nextRuleStack.top();
   nextRuleStack.pop();
 }
+*/
 
 DagNode*
 RuleTable::ruleRewrite(DagNode* subject, RewritingContext& context)

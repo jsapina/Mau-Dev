@@ -79,10 +79,11 @@ findFile(const string& userFileName, string& directory, string& fileName, int li
   if (p == string::npos)
     {
       fileName = userFileName;
-      directory = ".";
+      //directory = ".";
+      directory = directoryManager.getCwd();
       if (directoryManager.checkAccess(directory, fileName, R_OK, ext))
 	return true;
-      if (directoryManager.searchPath(MAUDE_LIB, directory, fileName, R_OK, ext))
+      if (directoryManager.searchPath(MAUDEV_LIB, directory, fileName, R_OK, ext))
 	return true;
       if (!(executableDirectory.empty()) &&
 	  directoryManager.checkAccess(executableDirectory, fileName, R_OK, ext))

@@ -147,7 +147,6 @@ EqualitySymbol::eqRewrite(DagNode* subject, RewritingContext& context)
       l->computeTrueSort(context);  // we don't need the sort but we do need to normalize
       r->computeTrueSort(context);
     }
-  //return context.builtInReplace(subject, l->equal(r) ? equalTerm.getDag() : notEqualTerm.getDag());
   return context.builtInReplaceRecord(subject, l->equal(r) ? equalTerm.getDag() : notEqualTerm.getDag()); //MAU-DEV
 }
 

@@ -46,9 +46,8 @@ int
 ACU_BaseDagNode::getSize() const
 {
   return isTree() ?
-    safeCast(const ACU_TreeDagNode*, this)->getTree().getSize() :
-    safeCast(const ACU_DagNode*, this)->argArray.length();
-
+    safeCastNonNull<const ACU_TreeDagNode*>(this)->getTree().getSize() :
+    safeCastNonNull<const ACU_DagNode*>(this)->argArray.length();
 }
 
 ExtensionInfo*

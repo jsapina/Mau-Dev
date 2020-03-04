@@ -21,7 +21,8 @@
 */
 
 //
-//      Implementation for abstract class Strategy.
+//      Implementation for class for processes that solve matching problems
+//      associated with condition fragments.
 //
 
 //	utility stuff
@@ -54,8 +55,7 @@
 #include "applicationProcess.hh"
 #include "matchProcess.hh"
 
-
-MatchProcess::MatchProcess(SharedRewriteSearchState::Ptr rewriteState,
+MatchProcess::MatchProcess(const SharedValue<RewriteSearchState>& rewriteState,
 			   PositionState::PositionIndex redexIndex,
 			   ExtensionInfo* extensionInfo,
 			   RewritingContext* matchContext,
@@ -106,7 +106,7 @@ MatchProcess::run(StrategicSearch& searchObject)
       //
       //	solve() could perform rewrites to apply cmbs.
       //
-      searchObject.getContext()->transferCount(*matchContext);
+      searchObject.getContext()->transferCountFrom(*matchContext);
     }
   else
     success = findFirst;

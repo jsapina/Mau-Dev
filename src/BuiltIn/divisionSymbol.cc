@@ -118,8 +118,7 @@ DivisionSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
     {
       const mpz_class& denominator = succSymbol->getNat(d1);
       if (denominator == 1)
-        //return context.builtInReplace(subject, d0);
-        return context.builtInReplaceRecord(subject, d0); //MAU-DEV
+	return context.builtInReplaceRecord(subject, d0); //MAU-DEV
       mpz_class storage0;
       const mpz_class& numerator = (d0->symbol() == minusSymbol) ? 
 	minusSymbol->getNeg(d0, storage0) : succSymbol->getNat(d0);
@@ -131,11 +130,9 @@ DivisionSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 	  if (denominator == common)
 	    {
 	      mpz_class nr = numerator / common;
-	      //return (nr >= 0) ? succSymbol->rewriteToNat(subject, context, nr) : context.builtInReplace(subject, minusSymbol->makeNegDag(nr));
-          return (nr >= 0) ? succSymbol->rewriteToNat(subject, context, nr) : context.builtInReplaceRecord(subject, minusSymbol->makeNegDag(nr)); //MAU-DEV
+	      return (nr >= 0) ? succSymbol->rewriteToNat(subject, context, nr) : context.builtInReplaceRecord(subject, minusSymbol->makeNegDag(nr)); //MAU-DEV
 	    }
-	  //(void) context.builtInReplace(subject, makeRatDag(numerator / common, denominator / common));
-      (void) context.builtInReplaceRecord(subject, makeRatDag(numerator / common, denominator / common)); //MAU-DEV
+	  (void) context.builtInReplaceRecord(subject, makeRatDag(numerator / common, denominator / common)); //MAU-DEV
 	  Assert(this == subject->symbol(), "unexpectedly changed top symbol");
 	  //
 	  //  	we don't want to revisit this node since it is already simplified

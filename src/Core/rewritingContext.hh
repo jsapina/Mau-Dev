@@ -69,7 +69,7 @@ public:
 
   void clearCount();
   void addInCount(const RewritingContext& other);
-  void transferCount(RewritingContext& other);
+  void transferCountFrom(RewritingContext& other);
   Int64 getTotalCount() const;
   Int64 getMbCount() const;
   Int64 getEqCount() const;
@@ -80,15 +80,20 @@ public:
   void ruleRewrite(Int64 limit = NONE);
   void fairRewrite(Int64 limit = NONE, Int64 gas = 1);
   void fairContinue(Int64 limit = NONE);
-  void fairStart(Int64 gas);
-  bool fairTraversal(Int64& limit);
+
+  void fairStart(Int64 limit, Int64 gas);
+  void fairRestart(Int64 limit);
+  bool fairTraversal();
+  bool getProgress();
+
   bool builtInReplace(DagNode* old, DagNode* replacement);
   bool builtInReplaceRecord(DagNode* old, DagNode* replacement); //MAU-DEV
-  
+
   virtual RewritingContext* makeSubcontext(DagNode* root, int purpose = OTHER);
   virtual int traceBeginEqTrial(DagNode* subject, const Equation* equation);
   virtual int traceBeginRuleTrial(DagNode* subject, const Rule* rule);
   virtual int traceBeginScTrial(DagNode* subject, const SortConstraint* sc);
+  virtual int traceBeginSdTrial(DagNode* subject, const StrategyDefinition* sc);
   virtual void traceEndTrial(int trialRef, bool success);
   virtual void traceExhausted(int trialRef);
 
@@ -125,6 +130,16 @@ public:
 					 DagNode* newState,
 					 const Vector<DagNode*>& newVariantSubstitution,
 					 const NarrowingVariableInfo& originalVariables);
+  //
+  //	This exists so we can handle an interrupt that causes a blocking call to return early.
+  //	If it returns true, the caller assumes it can continue; otherwise the caller should return.
+  //
+  virtual bool handleInterrupt();
+
+  virtual void traceStrategyCall(StrategyDefinition* sdef,
+				 DagNode* callDag,
+				 DagNode* subject,
+				 const Substitution* substitution);
 
 #ifdef DUMP
   static void dumpStack(ostream& s, const Vector<RedexPosition>& stack);
@@ -169,7 +184,6 @@ private:
   bool ascend();
   void descend();
   bool doRewriting(bool argsUnstackable);
-  bool fairTraversal();
 
   static bool traceFlag;
 
@@ -192,7 +206,7 @@ private:
   Int64 gasPerNode;
   Int64 currentGas;
   int lazyMarker;
-  
+
   /*** BEGIN MAU-DEV ***/
   Vector<RewritingContext*> savedContexts;
   Vector<DagNode*> savedSub;
@@ -216,11 +230,11 @@ RewritingContext::RewritingContext(DagNode* root)
   mbCount = 0;
   eqCount = 0;
   rlCount = 0;
-  
+
   narrowingCount = 0;
   variantNarrowingCount = 0;
   staleMarker = ROOT_OK;
-  
+
   /*** BEGIN MAU-DEV ***/
   savedContexts.clear();
   savedSub.clear();
@@ -236,8 +250,8 @@ RewritingContext::RewritingContext(int substitutionSize)
     rootNode(0)
 {
   //
-  //	This constructor exists so we can build RewritingContexts for use in the solve() phase of matching where
-  //	we don't otherwise have a RewritingContext to hand.
+  //	This constructor exists so we can build RewritingContexts for use in the solve()
+  //	phase of matching where we don't otherwise have a RewritingContext to hand.
   //
 }
 
@@ -247,11 +261,17 @@ RewritingContext::~RewritingContext()
     /*** BEGIN MAU-DEV ***/
     if (rootNode == 0)
         return;  // limited use RewritingContext
-    savedContexts.clear();
-    savedSub.clear();
+    Vector<RewritingContext*>().swap(savedContexts);
+    Vector<DagNode*>().swap(savedSub);
     delete savedLHS;
     delete savedRHS;
     /*** END MAU-DEV ***/
+}
+
+inline void
+RewritingContext::reduce()
+{
+  rootNode->reduce(*this);
 }
 
 inline DagNode*
@@ -339,16 +359,16 @@ RewritingContext::incrementVariantNarrowingCount(Int64 i)
 }
 
 
-
 inline void
 RewritingContext::clearCount()
 {
   mbCount = 0;
   eqCount = 0;
   rlCount = 0;
+
+  narrowingCount = 0;
+  variantNarrowingCount = 0;
 }
-
-
 
 inline void
 RewritingContext::addInCount(const RewritingContext& other)
@@ -362,7 +382,7 @@ RewritingContext::addInCount(const RewritingContext& other)
 }
 
 inline void
-RewritingContext::transferCount(RewritingContext& other)
+RewritingContext::transferCountFrom(RewritingContext& other)
 {
   mbCount += other.mbCount;
   other.mbCount = 0;
@@ -405,14 +425,17 @@ inline const Vector<DagNode*>& RewritingContext::getSavedSub() const
   return savedSub;
 }
 
+
 inline DagNode* RewritingContext::getSavedLHS()
 {
   return savedLHS;
 }
 
+
 inline DagNode* RewritingContext::getSavedRHS()
 {
   return savedRHS;
+
 }
 
 inline bool RewritingContext::builtInReplaceRecord(DagNode* old, DagNode* replacement)
@@ -437,5 +460,17 @@ inline bool RewritingContext::builtInReplaceRecord(DagNode* old, DagNode* replac
    return true;
 }
 /*** END MAU-DEV ***/
+
+inline bool
+RewritingContext::getProgress()
+{
+  return progress;
+}
+
+inline void
+RewritingContext::fairRestart(Int64 limit)
+{
+  rewriteLimit = limit;
+}
 
 #endif

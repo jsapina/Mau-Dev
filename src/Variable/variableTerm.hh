@@ -83,7 +83,7 @@ private:
 inline Sort*
 VariableTerm::getSort() const
 {
-  return safeCast(VariableSymbol*, symbol())->getSort();
+  return safeCastNonNull<VariableSymbol*>(symbol())->getSort();
 }
 
 inline int

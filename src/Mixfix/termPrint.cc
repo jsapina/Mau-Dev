@@ -99,7 +99,12 @@ MixfixModule::handleIter(ostream& s,
   if (number == 1)
     return false;  // do default thing
 
-  // NEED TO FIX: disambig
+  bool needToDisambiguate;
+  bool argumentRangeKnown;
+  decideIteratedAmbiguity(rangeKnown, term->symbol(), number, needToDisambiguate, argumentRangeKnown);
+  if (needToDisambiguate)
+    s << '(';
+
   string prefixName;
   makeIterName(prefixName, term->symbol()->id(), number);
   if (color != 0)
@@ -108,8 +113,9 @@ MixfixModule::handleIter(ostream& s,
     printPrefixName(s, prefixName.c_str(), si);
   s << '(';
   prettyPrint(s, st->getArgument(),
-	      PREFIX_GATHER, UNBOUNDED, 0, UNBOUNDED, 0, rangeKnown);
+	      PREFIX_GATHER, UNBOUNDED, 0, UNBOUNDED, 0, argumentRangeKnown);
   s << ')';
+  suffix(s, term, needToDisambiguate, color);
   return true;
 }
 
@@ -331,8 +337,16 @@ MixfixModule::prettyPrint(ostream& s,
   //
   int iflags = si.iflags;
   bool needDisambig = !rangeKnown && ambiguous(iflags);
-  bool argRangeKnown = rangeOfArgumentsKnown(iflags, rangeKnown, needDisambig);
+  bool argRangeKnown = false;
   int nrArgs = symbol->arity();
+  if (nrArgs == 0)
+    {
+      if (interpreter.getPrintFlag(Interpreter::PRINT_DISAMBIG_CONST))
+	needDisambig = true;
+    }
+  else
+    argRangeKnown = rangeOfArgumentsKnown(iflags, rangeKnown, needDisambig);
+  
   if (needDisambig)
     s << '(';
   if ((interpreter.getPrintFlag(Interpreter::PRINT_MIXFIX) && si.mixfixSyntax.length() != 0) ||
@@ -466,147 +480,153 @@ string MixfixModule::getPos(Vector<int>& pos)
 	return str;
 }
 
-void MixfixModule::mapSuffix(Vector<int>& position, ostream& s, Term* term, bool needDisambig, const char* /* color */)
+void MixfixModule::suffixMap(Vector<int>& position, ostream& s, Term* term, bool needDisambig, const char* /* color */)
 {
-	//cout << "\nSUFFIX: " << getPos(position);
-	if (needDisambig) {
-		stringstream ss;
-		ss << disambiguatorSort(term);
-		string str = ss.str();
-		//s << ")." << disambiguatorSort(term);
-        s << "c" << (str.length() + 2) << "p" << getPos(position);
+  if (needDisambig) {
+    stringstream ss;
+    ss << disambiguatorSort(term);
+    string str = ss.str();
+    //s << ")." << disambiguatorSort(term);
+    s << "c" << (str.length() + 2) << "p" << getPos(position);
+  }
+}
+
+bool MixfixModule::handleIterMap(Vector<int>& position, ostream& s, Term* term, SymbolInfo& si, bool rangeKnown, const char* color)
+{
+  if (!(si.symbolType.hasFlag(SymbolType::ITER)))
+    return false;
+  if (si.symbolType.getBasicType() == SymbolType::SUCC_SYMBOL && interpreter.getPrintFlag(Interpreter::PRINT_NUMBER))
+    {
+      SuccSymbol* succSymbol = safeCast(SuccSymbol*, term->symbol());
+      if (succSymbol->isNat(term))
+	{
+	  const mpz_class& nat = succSymbol->getNat(term);
+	  bool needDisambig = !rangeKnown && (kindsWithSucc.size() > 1 || overloadedIntegers.count(nat));
+	  prefixMap(position, s, needDisambig, color);
+	  //s << succSymbol->getNat(term);
+      stringstream ss;
+      ss << succSymbol->getNat(term);
+      string str = ss.str();
+      string mytail = getPos(position).length() > 0?".1":"1";
+      s << "c" << str.length() << "p" << getPos(position) << "X" << getPos(position) << mytail;
+	  suffixMap(position, s, term, needDisambig, color);
+	  return true;
+	}
     }
+  S_Term* st = safeCast(S_Term*, term);
+  const mpz_class& number = st->getNumber();
+  if (number == 1)
+    return false;  // do default thing
+
+  bool needToDisambiguate;
+  bool argumentRangeKnown;
+  decideIteratedAmbiguity(rangeKnown, term->symbol(), number, needToDisambiguate, argumentRangeKnown);
+  if (needToDisambiguate)
+    //s << '(';
+    s << "c1p" << getPos(position);
+
+  string prefixName;
+  makeIterName(prefixName, term->symbol()->id(), number);
+  //if (color != 0)
+  //  s << color << prefixName << Tty(Tty::RESET);
+  //else
+    printPrefixNameMap(position, s, prefixName.c_str(), si);
+  //s << '(';
+  s << "c1p" << getPos(position);
+  prettyPrintMap(position, s, st->getArgument(), PREFIX_GATHER, UNBOUNDED, 0, UNBOUNDED, 0, argumentRangeKnown);
+  //s << ')';
+  s << "c1p" << getPos(position);
+  suffixMap(position, s, term, needToDisambiguate, color);
+  return true;
 }
 
-bool MixfixModule::mapHandleIter(Vector<int>& position, ostream& s, Term* term, SymbolInfo& si, bool rangeKnown, const char* color)
+bool MixfixModule::handleMinusMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
 {
-	if (!(si.symbolType.hasFlag(SymbolType::ITER)))
-		return false;
-	if (si.symbolType.getBasicType() == SymbolType::SUCC_SYMBOL && interpreter.getPrintFlag(Interpreter::PRINT_NUMBER))
+  if (interpreter.getPrintFlag(Interpreter::PRINT_NUMBER))
     {
-		SuccSymbol* succSymbol = safeCast(SuccSymbol*, term->symbol());
-		if (succSymbol->isNat(term))
-		{
-			const mpz_class& nat = succSymbol->getNat(term);
-			bool needDisambig = !rangeKnown && (kindsWithSucc.size() > 1 || overloadedIntegers.count(nat));
-			mapPrefix(position, s, needDisambig, color);
-			//s << succSymbol->getNat(term);
-			stringstream ss;
-			ss << succSymbol->getNat(term);
-			string str = ss.str();
-			string mytail = getPos(position).length() > 0?".1":"1";
-			s << "c" << str.length() << "p" << getPos(position) << "X" << getPos(position) << mytail;
-			mapSuffix(position, s, term, needDisambig, color);
-			return true;
-		}
+      const MinusSymbol* minusSymbol = safeCast(MinusSymbol*, term->symbol());
+      if (minusSymbol->isNeg(term))
+	{
+	  mpz_class neg;
+	  (void) minusSymbol->getNeg(term, neg);
+	  bool needDisambig = !rangeKnown && (kindsWithMinus.size() > 1 || overloadedIntegers.count(neg));
+	  prefixMap(position, s, needDisambig, color);
+	  //s << neg;
+      stringstream ss;
+	  ss << neg;
+	  string str = ss.str();
+	  string mytail = getPos(position).length() > 0?".1":"1";
+      s << "c1p" << getPos(position) << "c" << str.length()-1 << "p" << getPos(position) << mytail << "X" << getPos(position) << mytail << ".1";
+	  suffixMap(position, s, term, needDisambig, color);
+	  return true;
 	}
-	S_Term* st = safeCast(S_Term*, term);
-	const mpz_class& number = st->getNumber();
-	if (number == 1)
-		return false;  // do default thing
-
-	// NEED TO FIX: disambig
-	string prefixName;
-	makeIterName(prefixName, term->symbol()->id(), number);
-	//if (color != 0)
-	//	s << color << prefixName << Tty(Tty::RESET);
-	//else
-		mapPrintPrefixName(position, s, prefixName.c_str(), si);
-	//s << '(';
-	s << "c1p" << getPos(position);
-	mapPrettyPrint(position, s, st->getArgument(),PREFIX_GATHER, UNBOUNDED, 0, UNBOUNDED, 0, rangeKnown);
-	//s << ')';
-	s << "c1p" << getPos(position);
-	return true;
+    }
+  return false;
 }
 
-bool MixfixModule::mapHandleMinus(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
+bool MixfixModule::handleDivisionMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
 {
-	if (interpreter.getPrintFlag(Interpreter::PRINT_NUMBER))
+  if (interpreter.getPrintFlag(Interpreter::PRINT_RAT))
     {
-		const MinusSymbol* minusSymbol = safeCast(MinusSymbol*, term->symbol());
-		if (minusSymbol->isNeg(term))
-		{
-			mpz_class neg;
-			(void) minusSymbol->getNeg(term, neg);
-			bool needDisambig = !rangeKnown && (kindsWithMinus.size() > 1 || overloadedIntegers.count(neg));
-			mapPrefix(position, s, needDisambig, color);
-			//s << neg;
-			stringstream ss;
-			ss << neg;
-			string str = ss.str();
-			string mytail = getPos(position).length() > 0?".1":"1";
-			s << "c1p" << getPos(position) << "c" << str.length()-1 << "p" << getPos(position) << mytail << "X" << getPos(position) << mytail << ".1";
-			mapSuffix(position, s, term, needDisambig, color);
-			return true;
-		}
+      const DivisionSymbol* divisionSymbol = safeCast(DivisionSymbol*, term->symbol());
+      if (divisionSymbol->isRat(term))
+	{
+	  pair<mpz_class, mpz_class> rat;
+	  rat.second = divisionSymbol->getRat(term, rat.first);
+	  bool needDisambig = !rangeKnown && (kindsWithDivision.size() > 1 || overloadedRationals.count(rat));
+	  prefixMap(position, s, needDisambig, color);
+	  //s << rat.first << '/' << rat.second;
+      s << rat.first << '/' << rat.second; //TODO: Map?
+	  suffixMap(position, s, term, needDisambig, color);
+	  return true;
 	}
-	return false;
+    }
+  return false;
 }
 
-bool MixfixModule::mapHandleDivision(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
+void MixfixModule::handleFloatMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
 {
-	if (interpreter.getPrintFlag(Interpreter::PRINT_RAT))
-    {
-		const DivisionSymbol* divisionSymbol = safeCast(DivisionSymbol*, term->symbol());
-		if (divisionSymbol->isRat(term))
-		{
-			pair<mpz_class, mpz_class> rat;
-			rat.second = divisionSymbol->getRat(term, rat.first);
-			bool needDisambig = !rangeKnown && (kindsWithDivision.size() > 1 || overloadedRationals.count(rat));
-			mapPrefix(position, s, needDisambig, color);
-			//s << rat.first << '/' << rat.second;
-			s << rat.first << '/' << rat.second; //TODO: Map?
-			mapSuffix(position, s, term, needDisambig, color);
-			return true;
-		}
-	}
-	return false;
+  double mfValue = safeCast(FloatTerm*, term)->getValue();
+  bool needDisambig = !rangeKnown && (floatSymbols.size() > 1 || overloadedFloats.count(mfValue));
+  prefixMap(position, s, needDisambig, color);
+  //s << doubleToString(mfValue);
+  s << "c" << strlen(doubleToString(mfValue)) << "p" << getPos(position);
+  suffixMap(position, s, term, needDisambig, color);
 }
 
-void MixfixModule::mapHandleFloat(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
+void MixfixModule::handleStringMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
 {
-	double mfValue = safeCast(FloatTerm*, term)->getValue();
-	bool needDisambig = !rangeKnown && (floatSymbols.size() > 1 || overloadedFloats.count(mfValue));
-	mapPrefix(position, s, needDisambig, color);
-	//s << doubleToString(mfValue);
-	s << "c" << strlen(doubleToString(mfValue)) << "p" << getPos(position);
-	mapSuffix(position, s, term, needDisambig, color);
+  string strValue;
+  Token::ropeToString(safeCast(StringTerm*, term)->getValue(), strValue);
+  bool needDisambig = !rangeKnown && (stringSymbols.size() > 1 || overloadedStrings.count(strValue));
+  prefixMap(position, s, needDisambig, color);
+  //s << strValue;
+  s << "c" << strValue.length() << "p" << getPos(position);
+  suffixMap(position, s, term, needDisambig, color);
 }
 
-void MixfixModule::mapHandleString(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
+void MixfixModule::handleQuotedIdentifierMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
 {
-	string strValue;
-	Token::ropeToString(safeCast(StringTerm*, term)->getValue(), strValue);
-	bool needDisambig = !rangeKnown && (stringSymbols.size() > 1 || overloadedStrings.count(strValue));
-	mapPrefix(position, s, needDisambig, color);
-	//s << strValue;
-	s << "c" << strValue.length() << "p" << getPos(position);
-	mapSuffix(position, s, term, needDisambig, color);
+  int qidCode = safeCast(QuotedIdentifierTerm*, term)->getIdIndex();
+  bool needDisambig = !rangeKnown && (quotedIdentifierSymbols.size() > 1 || overloadedQuotedIdentifiers.count(qidCode));
+  prefixMap(position, s, needDisambig, color);
+  //s << '\'' << Token::name(qidCode);
+  s << "c" << strlen(Token::name(qidCode))+1 << "p" << getPos(position);
+  suffixMap(position, s, term, needDisambig, color);
 }
 
-void MixfixModule::mapHandleQuotedIdentifier(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
+void MixfixModule::handleVariableMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
 {
-	int qidCode = safeCast(QuotedIdentifierTerm*, term)->getIdIndex();
-	bool needDisambig = !rangeKnown && (quotedIdentifierSymbols.size() > 1 || overloadedQuotedIdentifiers.count(qidCode));
-	mapPrefix(position, s, needDisambig, color);
-	//s << '\'' << Token::name(qidCode);
-	s << "c" << strlen(Token::name(qidCode))+1 << "p" << getPos(position);
-	mapSuffix(position, s, term, needDisambig, color);
+  VariableTerm* v = safeCast(VariableTerm*, term);
+  Sort* sort = safeCast(VariableSymbol*, term->symbol())->getSort();
+  pair<int, int> p(v->id(), sort->id());
+  bool needDisambig = !rangeKnown && overloadedVariables.count(p);  // kinds not handled
+  prefixMap(position, s, needDisambig, color);
+  printVariableMap(position, s, p.first, sort);
+  suffixMap(position, s, term, needDisambig, color);
 }
 
-void MixfixModule::mapHandleVariable(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
-{
-	VariableTerm* v = safeCast(VariableTerm*, term);
-	Sort* sort = safeCast(VariableSymbol*, term->symbol())->getSort();
-	pair<int, int> p(v->id(), sort->id());
-	bool needDisambig = !rangeKnown && overloadedVariables.count(p);  // kinds not handled
-	mapPrefix(position, s, needDisambig, color);
-	mapPrintVariable(position, s, p.first, sort);
-	mapSuffix(position, s, term, needDisambig, color);
-}
-
-void MixfixModule::mapHandleSMT_Number(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color) // TODO: Map
+void MixfixModule::handleSMT_NumberMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color)
 {
   //
   //	Get value.
@@ -645,7 +665,7 @@ void MixfixModule::mapHandleSMT_Number(Vector<int>& position, ostream& s, Term* 
 }
 
 void
-MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int requiredPrec, int leftCapture, const ConnectedComponent* leftCaptureComponent, int rightCapture, const ConnectedComponent* rightCaptureComponent, bool rangeKnown)
+MixfixModule::prettyPrintMap(Vector<int>& position, ostream& s, Term* term, int requiredPrec, int leftCapture, const ConnectedComponent* leftCaptureComponent, int rightCapture, const ConnectedComponent* rightCaptureComponent, bool rangeKnown)
 {
   if (UserLevelRewritingContext::interrupted())
     return;
@@ -656,46 +676,46 @@ MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int 
   //
   //	Check for special i/o representation.
   //
-  if (mapHandleIter(position, s, term, si, rangeKnown, color))
+  if (handleIterMap(position, s, term, si, rangeKnown, color))
     return;
   int basicType = si.symbolType.getBasicType();
   switch (basicType)
     {
     case SymbolType::MINUS_SYMBOL:
       {
-	if (mapHandleMinus(position, s, term, rangeKnown, color))
+	if (handleMinusMap(position, s, term, rangeKnown, color))
 	  return;
 	break;
       }
     case SymbolType::DIVISION_SYMBOL:
       {
-	if (mapHandleDivision(position, s, term, rangeKnown, color))
+	if (handleDivisionMap(position, s, term, rangeKnown, color))
 	  return;
 	break;
       }
     case SymbolType::FLOAT:
       {
-	mapHandleFloat(position, s, term, rangeKnown, color);
+	handleFloatMap(position, s, term, rangeKnown, color);
 	return;
       }
     case SymbolType::STRING:
       {
-	mapHandleString(position, s, term, rangeKnown, color);
+	handleStringMap(position, s, term, rangeKnown, color);
 	return;
       }
     case SymbolType::QUOTED_IDENTIFIER:
       {
-	mapHandleQuotedIdentifier(position, s, term, rangeKnown, color);
+	handleQuotedIdentifierMap(position, s, term, rangeKnown, color);
 	return;
       }
     case SymbolType::VARIABLE:
       {
-	mapHandleVariable(position, s, term, rangeKnown, color);
+	handleVariableMap(position, s, term, rangeKnown, color);
 	return;
       }
     case SymbolType::SMT_NUMBER_SYMBOL:
       {
-	mapHandleSMT_Number(position, s, term, rangeKnown, color);
+	handleSMT_NumberMap(position, s, term, rangeKnown, color);
 	return;
       }
     default:
@@ -741,7 +761,7 @@ MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int 
 	  Term* t = a.argument();
 	  a.next();
 	  moreArgs = a.valid();
-	  pos = mapPrintTokens(position, s, si, pos, color);
+	  pos = printTokensMap(position, s, si, pos, color);
 	  if (arg == nrArgs - 1 && moreArgs)
 	    {
 	      ++nrTails;
@@ -749,7 +769,7 @@ MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int 
 	      if (needAssocParen)
             //s << '(';
             s << "c1p" << getPos(position);
-	      pos = mapPrintTokens(position, s, si, 0, color);
+	      pos = printTokensMap(position, s, si, 0, color);
 	    }
 	  int lc = UNBOUNDED;
 	  const ConnectedComponent* lcc = 0;
@@ -775,14 +795,14 @@ MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int 
 		  rcc = rightCaptureComponent;
 		}
 	    }
-        position.append(newpos);
-        mapPrettyPrint(position, s, t, si.gather[arg], lc, lcc, rc, rcc, argRangeKnown);
-        position.contractTo(position.length()-1);
-        newpos++;
-        if (UserLevelRewritingContext::interrupted())
+      position.append(newpos);
+	  prettyPrintMap(position, s, t, si.gather[arg], lc, lcc, rc, rcc, argRangeKnown);
+	  position.contractTo(position.length()-1);
+      newpos++;
+      if (UserLevelRewritingContext::interrupted())
 	    return;
 	}
-      mapPrintTails(position, s, si, pos, nrTails, needAssocParen, true, color);
+      printTailsMap(position, s, si, pos, nrTails, needAssocParen, true, color);
       if (UserLevelRewritingContext::interrupted())
 	return;
       if (needParen)
@@ -796,9 +816,9 @@ MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int 
       //
       const char* prefixName = Token::name(symbol->id());
       //if (color != 0)
-      //s << color << prefixName << Tty(Tty::RESET);
+      //  s << color << prefixName << Tty(Tty::RESET);
       //else
-      mapPrintPrefixName(position, s, prefixName, si);
+        printPrefixNameMap(position, s, prefixName, si);
       ArgumentIterator a(*term);
       if (a.valid())
 	{
@@ -816,17 +836,17 @@ MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int 
 		  moreArgs)
 		{
 		  ++nrTails;
-		  mapPrintPrefixName(position, s, prefixName, si);
+		  printPrefixNameMap(position, s, prefixName, si);
 		  //s << '(';
           s << "c1p" << getPos(position);
 		}
-        position.append(newpos);
-	    mapPrettyPrint(position, s, t, PREFIX_GATHER, UNBOUNDED, 0, UNBOUNDED, 0, argRangeKnown);
-	    position.contractTo(position.length()-1);
-        newpos++;
-        if (UserLevelRewritingContext::interrupted())
+          position.append(newpos);
+	      prettyPrintMap(position, s, t, PREFIX_GATHER, UNBOUNDED, 0, UNBOUNDED, 0, argRangeKnown);
+	      position.contractTo(position.length()-1);
+          newpos++;
+          if (UserLevelRewritingContext::interrupted())
             return;
-	    if (!moreArgs)
+	      if (!moreArgs)
             break;
 	      //s << ", ";
           s << "c2p" << getPos(position);
@@ -840,6 +860,6 @@ MixfixModule::mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int 
 	    }
 	}
     }
-    mapSuffix(position, s, term, needDisambig, color);
+  suffixMap(position, s, term, needDisambig, color);
 }
 /*** END MAU-DEV ***/

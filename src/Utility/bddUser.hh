@@ -33,7 +33,6 @@ public:
   typedef void ErrorHandler(int errorNr);
 
   BddUser();
-  ~BddUser();
 
   static bdd ithvar(int i);
   static bdd nithvar(int i);
@@ -48,14 +47,13 @@ private:
   {
     DEFAULT_NODE_SIZE = 1000,
     DEFAULT_CACHE_SIZE = 100,
-    DEFAULT_NR_VARIABLES = 10000 //BuDDy fix
+    DEFAULT_NR_VARIABLES = 10000 //MAU-DEV BuDDy fix
   };
 
   static void gc_handler(int pre, bddGbcStat* stat);
   static void err_handler(int errcode);
 
-  static int nrUsers;
-
+  static bool buddyInitialized;
   static ErrorHandler* errorHandler;
   //
   //	These structures are expensive to create and destroy so we keep

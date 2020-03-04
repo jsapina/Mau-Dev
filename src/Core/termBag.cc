@@ -60,12 +60,12 @@ TermBag::insertBuiltTerm(Term* term, bool eagerContext)
   //
   if (eagerContext)
     {
-      pair<TermSet::iterator, bool> p = termsUsableInEagerContext.insert(term);
+      DebugSave(p, termsUsableInEagerContext.insert(term));
       Assert(p.second, "re-insertion of " << term);
     }
   else
     {
-      pair<TermSet::iterator, bool> p = termsUsableInLazyContext.insert(term);
+      DebugSave(p, termsUsableInLazyContext.insert(term));
       Assert(p.second, "re-insertion of " << term);
     }
 }

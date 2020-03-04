@@ -40,6 +40,7 @@ public:
   void generateRewrite(DagNode* subject, Int64 limit);
   void generateFrewrite(DagNode* subject, Int64 limit, Int64 gas);
   void generateErewrite(DagNode* subject, Int64 limit, Int64 gas);
+  void generateSRewrite(DagNode* subject, StrategyExpression* expression, Int64 limit, bool depthSearch);
   void generateSearch(DagNode* subject,
 		      PreEquation* pattern,
 		      const string& searchType,
@@ -61,6 +62,7 @@ public:
   void generate(const ConditionFragment* c);
   void generate(Rule* rule);
   void generate(DagNode* dagNode, PointerSet* visited = 0);
+  void generate(StrategyExpression* strat);
   void generateSearchGraph(RewriteSequenceSearch* graph);
   void generateSearchPath(RewriteSequenceSearch* graph, int stateNr);
   void generateCondition(const Vector<ConditionFragment*>& condition);

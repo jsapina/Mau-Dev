@@ -413,8 +413,7 @@ NumberOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 		      }
 		    Assert(trueTerm.getTerm() != 0 && falseTerm.getTerm() != 0,
 			   "null true/false for relational op");
-		    //return context.builtInReplace(subject, b ? trueTerm.getDag() : falseTerm.getDag());
-            return context.builtInReplaceRecord(subject, b ? trueTerm.getDag() : falseTerm.getDag()); //MAU-DEV
+		    return context.builtInReplaceRecord(subject, b ? trueTerm.getDag() : falseTerm.getDag()); //MAU-DEV
 		  }
 		}
 	    }
@@ -440,7 +439,6 @@ NumberOpSymbol::eqRewrite(DagNode* subject, RewritingContext& context)
 	    }
 	}
       Assert(minusSymbol != 0 || r >= 0, "can't make -ve int");
-      //return (r >= 0) ? succSymbol->rewriteToNat(subject, context, r) : context.builtInReplace(subject, minusSymbol->makeNegDag(r));
       return (r >= 0) ? succSymbol->rewriteToNat(subject, context, r) : context.builtInReplaceRecord(subject, minusSymbol->makeNegDag(r)); //MAU-DEV
     }
  fail:

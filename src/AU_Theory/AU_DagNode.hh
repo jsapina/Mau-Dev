@@ -46,9 +46,6 @@ public:
   DagNode* copyWithReplacement(Vector<RedexPosition>& redexStack,
 			       int first,
 			       int last);
-  void stackArguments(Vector<RedexPosition>& stack,
-		      int parentIndex,
-		      bool respectFrozen);
   //
   //	Functions required to handle extension information.
   //
@@ -71,7 +68,7 @@ public:
   //
   //	Supported for A only.
   //
-  ReturnResult computeBaseSortForGroundSubterms();
+  ReturnResult computeBaseSortForGroundSubterms(bool warnAboutUnimplemented);
   bool computeSolvedForm2(DagNode* rhs, UnificationContext& solution, PendingUnificationStack& pending);
   void insertVariables2(NatSet& occurs);
 
@@ -79,7 +76,10 @@ public:
   //	Interface for narrowing.
   //
   bool indexVariables2(NarrowingVariableInfo& indices, int baseIndex);
-  DagNode* instantiateWithReplacement(const Substitution& substitution, const Vector<DagNode*>& eagerCopies, int argIndex, DagNode* newDag);
+  DagNode* instantiateWithReplacement(const Substitution& substitution,
+				      const Vector<DagNode*>* eagerCopies,
+				      int argIndex,
+				      DagNode* newDag);
   DagNode* instantiateWithCopies2(const Substitution& substitution, const Vector<DagNode*>& eagerCopies);
   //
   //	Functions particular to AU_DagNode.
@@ -98,8 +98,8 @@ private:
   //	Functions required by theory interface.
   //
   DagNode* markArguments();
-  //DagNode* copyEagerUptoReduced2();
   DagNode* copyEagerUptoReduced2(const bool flag); //MAU-DEV
+  DagNode* copyAll2();
   void clearCopyPointers2();
   //
   //	Functions particular to AU_DagNode.

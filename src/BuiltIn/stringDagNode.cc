@@ -46,7 +46,7 @@ StringDagNode::StringDagNode(StringSymbol* symbol, const Rope& value)
     value(value)
 {
   Assert(sizeof(Rope) <= DagNode::nrWords * sizeof(MachineWord),
-	 cerr << "Rope too big for internal storage");
+	 "Rope too big for internal storage");
   setCallDtor();  // need our dtor called when garbage collected to destruct Rope
 }
 

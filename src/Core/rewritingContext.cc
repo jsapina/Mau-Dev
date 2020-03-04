@@ -77,6 +77,15 @@ RewritingContext::makeSubcontext(DagNode* root, int /* purpose */)
   return new RewritingContext(root);
 }
 
+bool
+RewritingContext::handleInterrupt()
+{
+  //
+  //	By default we don't know how to handle an interrupt.
+  //
+  return false;
+}
+
 int
 RewritingContext::traceBeginEqTrial(DagNode* /* subject */, const Equation* /* equation */)
 {
@@ -91,6 +100,12 @@ RewritingContext::traceBeginRuleTrial(DagNode* /* subject */, const Rule* /* rul
 
 int
 RewritingContext::traceBeginScTrial(DagNode* /* subject */, const SortConstraint* /* sc */)
+{
+  return 0;
+}
+
+int
+RewritingContext::traceBeginSdTrial(DagNode* /* subject */, const StrategyDefinition* /* sc */)
 {
   return 0;
 }
@@ -174,6 +189,14 @@ RewritingContext::traceVariantNarrowingStep(Equation* /* equation */,
 					    DagNode* /* newState */,
 					    const Vector<DagNode*>& /* newVariantSubstitution */,
 					    const NarrowingVariableInfo& /* originalVariables */)
+{
+}
+
+void
+RewritingContext::traceStrategyCall(StrategyDefinition* /* sdef */,
+				    DagNode* /* callDag */,
+				    DagNode* /* subject */,
+				    const Substitution* /* substitution */)
 {
 }
 

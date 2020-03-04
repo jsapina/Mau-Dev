@@ -38,13 +38,24 @@
 
 StrategicTask::StrategicTask(StrategicTask* master)
   : StrategicExecution(master),
-    slaveList(this)
+    slaveList(this),
+    varsContext(master ? master->getVarsContext()
+		       : VariableBindingsManager::EMPTY_CONTEXT)
 {
 }
 
 StrategicTask::StrategicTask(StrategicExecution* sibling)
   : StrategicExecution(sibling),
-    slaveList(this)
+    slaveList(this),
+    varsContext(sibling->getOwner()->getVarsContext())
+{
+}
+
+
+StrategicTask::StrategicTask(StrategicExecution* sibling, VariableBindingsManager::ContextId ctx)
+  : StrategicExecution(sibling),
+    slaveList(this),
+    varsContext(ctx)
 {
 }
 

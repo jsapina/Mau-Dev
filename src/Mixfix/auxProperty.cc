@@ -192,7 +192,13 @@ void
 Token::splitParameterizedSort(int code, Vector<int>& codes)
 {
   Assert(auxProperty(code) == AUX_STRUCTURED_SORT, "called on " << stringTable.name(code));
-
+  //
+  //	Breaks a structured sort such as:
+  //	  Foo{TRIV,TRIV}{Bar{X,Baz},Z}
+  //	in to lexical pieces:
+  //	  Foo { TRIV , TRIV } { Bar { X , Baz } , Z }
+  //	for grammar construction and meta-pretty-printing.
+  //
   codes.clear();
   const char* name = stringTable.name(code);
   char* t = new char[strlen(name) + 1];
@@ -248,7 +254,15 @@ void
 Token::splitParameterList(int code, int& header, Vector<int>& parameters)
 {
   Assert(auxProperty(code) == AUX_STRUCTURED_SORT, "called on " << stringTable.name(code));
-
+  //
+  //	Breaks the structured sort such as:
+  //	  Foo{TRIV,TRIV}{Bar{X,Baz},Z}
+  //	in to a header:
+  //	  Foo{TRIV,TRIV}
+  //	and final parameter list:
+  //	  Bar{X,Baz} Z
+  //	for the instantiation of parameterized sorts.
+  //
   parameters.clear();
   const char* n = name(code);
   int len = strlen(n);
@@ -307,6 +321,15 @@ Token::splitParameterList(int code, int& header, Vector<int>& parameters)
 int
 Token::joinParameterList(int header, const Vector<int>& parameters)
 {
+  //
+  //	Joins a header such as:
+  //	  Foo{TRIV,TRIV}
+  //	and a parameter list:
+  //	  Bar{X,Baz} Z
+  //	to make a new parameterized sort
+  //	  Foo{TRIV,TRIV}{Bar{X,Baz},Z}
+  //	for the instantiation of parameterized sorts.
+  //
   Rope n(name(header));
   const char* sep = "`{";
   FOR_EACH_CONST(i, Vector<int>, parameters)
@@ -316,5 +339,9 @@ Token::joinParameterList(int header, const Vector<int>& parameters)
       n += name(*i);
     }
   n += "`}";
+  //
+  //	If it's the first time we've seen this token, ropeToCode() will
+  //	check for special properties.
+  //
   return ropeToCode(n);
 }

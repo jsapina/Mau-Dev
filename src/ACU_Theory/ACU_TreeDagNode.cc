@@ -125,22 +125,6 @@ ACU_TreeDagNode::copyWithReplacement(Vector<RedexPosition>& redexStack,
   return treeToArgVec(this)->copyWithReplacement(redexStack, first, last);
 }
 
-void
-ACU_TreeDagNode::stackArguments(Vector<RedexPosition>& stack,
-				int parentIndex,
-				bool respectFrozen)
-{
-  if (respectFrozen && !(symbol()->getFrozen().empty()))
-    return;
-  int j = 0;
-  for (ACU_FastIter i(tree); i.valid(); i.next(), ++j)
-    {
-      DagNode* d = i.getDagNode();
-      if (!(d->isUnstackable()))
-	stack.append(RedexPosition(d, parentIndex, j));
-    }
-}
-
 bool
 ACU_TreeDagNode::matchVariableWithExtension(int index,
 				const Sort* sort,
@@ -185,7 +169,6 @@ ACU_TreeDagNode::markArguments()
 }
 
 DagNode*
-//ACU_TreeDagNode::copyEagerUptoReduced2()
 ACU_TreeDagNode::copyEagerUptoReduced2(const bool flag) //MAU-DEV
 {
   ACU_Symbol* s = symbol();
@@ -197,12 +180,21 @@ ACU_TreeDagNode::copyEagerUptoReduced2(const bool flag) //MAU-DEV
   
   /*** BEGIN MAU-DEV ***/
   if (s->getPermuteStrategy() == BinarySymbol::EAGER)
-        return treeToArgVec(this)->copyEagerUptoReduced2(flag);
+      return treeToArgVec(this)->copyEagerUptoReduced2(flag);
   DagNode* n = new ACU_TreeDagNode(s, tree);
   if (isHole())
       n->setHole();
   return n;
   /*** END MAU-DEV ***/
+}
+
+DagNode*
+ACU_TreeDagNode::copyAll2()
+{
+  //
+  //	Don't try to do this copy on tree form.
+  //
+  return treeToArgVec(this)->copyAll2();
 }
 
 void

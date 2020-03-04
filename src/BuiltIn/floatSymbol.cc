@@ -57,14 +57,14 @@ FloatSymbol::FloatSymbol(int id)
 void
 FloatSymbol::fillInSortInfo(Term* subject)
 {
-  Sort* s = finite(static_cast<FloatTerm*>(subject)->getValue()) ? finiteSort : sort;
+  Sort* s = isfinite(static_cast<FloatTerm*>(subject)->getValue()) ? finiteSort : sort;
   subject->setSortInfo(s->component(), s->index());
 }
 
 void
 FloatSymbol::computeBaseSort(DagNode* subject)
 {
-  Sort* s = finite(static_cast<FloatDagNode*>(subject)->getValue()) ? finiteSort : sort;
+  Sort* s = isfinite(static_cast<FloatDagNode*>(subject)->getValue()) ? finiteSort : sort;
   subject->setSortIndex(s->index());
 }
 

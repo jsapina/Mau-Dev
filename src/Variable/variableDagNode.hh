@@ -44,13 +44,10 @@ public:
   DagNode* copyWithReplacement(Vector<RedexPosition>& redexStack,
 			       int first,
 			       int last);
-  void stackArguments(Vector<RedexPosition>& stack,
-		      int parentIndex,
-		      bool respectFrozen);
   //
   //	Unification member functions.
   //
-  ReturnResult computeBaseSortForGroundSubterms();
+  ReturnResult computeBaseSortForGroundSubterms(bool warnAboutUnimplemented);
   /*
   bool computeSolvedForm2(DagNode* rhs,
 			  Substitution& solution,
@@ -74,8 +71,8 @@ public:
 
 private:
   DagNode* markArguments();
-  //DagNode* copyEagerUptoReduced2();
   DagNode* copyEagerUptoReduced2(const bool flag); //MAU-DEV
+  DagNode* copyAll2();
   void clearCopyPointers2();
 
   bool safeVirtualReplacement(VariableDagNode* oldVar, VariableDagNode* newVar, UnificationContext& solution, PendingUnificationStack& pending);

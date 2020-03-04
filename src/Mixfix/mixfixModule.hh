@@ -49,7 +49,8 @@ class MixfixModule : public ProfileModule, public MetadataStore, protected Share
   enum Bits
   {
     SYSTEM = 1,
-    THEORY = 2
+    THEORY = 2,
+    STRATEGY = 4
   };
 
 public:
@@ -57,8 +58,10 @@ public:
   {
     FUNCTIONAL_MODULE = 0,
     SYSTEM_MODULE = SYSTEM,
+    STRATEGY_MODULE = SYSTEM | STRATEGY,
     FUNCTIONAL_THEORY = THEORY,
-    SYSTEM_THEORY = SYSTEM | THEORY
+    SYSTEM_THEORY = SYSTEM | THEORY,
+    STRATEGY_THEORY = SYSTEM | STRATEGY | THEORY
   };
 
   enum GatherSymbols
@@ -73,12 +76,14 @@ public:
   MixfixModule(int name, ModuleType moduleType);
   ~MixfixModule();
 
+  void closeSortSet();
   void closeSignature();
   void economize();
   //
   //	Functions to insert stuff.
   //
   void insertPotentialLabels(const set<int>& l);
+  void insertPotentialRuleLabels(const set<int>& rls);
   Sort* addSort(int name);
   Symbol* addOpDeclaration(Token prefixName,
 			   const Vector<Sort*>& domainAndRange,
@@ -100,6 +105,11 @@ public:
 		   const Vector<int>& gather,
 		   const Vector<int>& format,
 		   int metadata);
+  int addStrategy(Token name,
+		  const Vector<Sort*>& domainSorts,
+		  Sort* subjectSort,
+		  int metadata = NONE,
+		  bool imported = false);
   void addIdentityToPolymorph(int polymorphIndex,
 			      Term* identity);
   void addIdHookToPolymorph(int polymorphIndex,
@@ -111,6 +121,11 @@ public:
   void addTermHookToPolymorph(int polymorphIndex,
 			      int purpose,
 			      Term* term);
+  //
+  //	Allow a temporary change op variable aliases for the benefit of processing
+  //	op->term mappings in views.
+  //
+  void swapVariableAliasMap(AliasMap& other, MixfixParser*& otherParser);
   //
   //	Functions to make things.
   //
@@ -124,6 +139,7 @@ public:
   static void printCondition(ostream& s, const Vector<ConditionFragment*>& condition);
   static void printCondition(ostream& s, const PreEquation* pe);
   void printAttributes(ostream& s, const PreEquation* pe, ItemType itemType);
+  void printStrategyTerm(ostream& s, RewriteStrategy* strat, Term* term);
   //
   //	Parsing functions.
   //
@@ -136,6 +152,13 @@ public:
 		 Term*& parse1,
 		 Term*& parse2,
 		 int& firstBad);
+  StrategyExpression* parseStrategyExpr(const Vector<Token>& bubble,
+					int begin = 0,
+					int end = DEFAULT);
+  int parseStrategyExpr2(const Vector<Token>& bubble,
+			 StrategyExpression*& parse1,
+			 StrategyExpression*& parse2,
+			 int& firstBad);
   void parseStatement(const Vector<Token>& bubble);
   bool parseSearchCommand(const Vector<Token>& bubble,
 			  Term*& initial,
@@ -181,10 +204,14 @@ public:
   void getTermAttachments(Symbol* symbol,
 			  Vector<const char*>& purposes,
 			  Vector<Term*>& terms) const;
+  Sort* getStrategyRangeSort() const;
+
   //
   //	Find functions.
   //
   Sort* findSort(int name) const;
+  RewriteStrategy* findStrategy(int name,
+				const Vector<ConnectedComponent*>& domainComponents) const;
   Symbol* findSymbol(int name,
 		     const Vector<ConnectedComponent*>& domainComponents,
 		     ConnectedComponent* rangeComponent);
@@ -233,6 +260,7 @@ public:
   //	Pretty print functions.
   //
   void bufferPrint(Vector<int>& buffer, Term* term, int printFlags);
+  void bufferPrint(Vector<int>& buffer, StrategyExpression* term, int printFlags);
   static Sort* disambiguatorSort(const Term* term);
   int getSMT_NumberToken(const mpq_class& value, Sort* sort);
   //
@@ -242,15 +270,24 @@ public:
   static ModuleType join(ModuleType t1, ModuleType t2);
   static bool isTheory(ModuleType t);
   bool isTheory() const;
+  static bool isStrategic(ModuleType t);
+  bool isStrategic() const;
   static bool canImport(ModuleType t1, ModuleType t2);
   static bool canHaveAsParameter(ModuleType t1, ModuleType t2);
   const SMT_Info& getSMT_Info();
   bool validForSMT_Rewriting();
-  void mapPrettyPrint(Vector<int>& position, ostream& s, Term* term, int requiredPrec, int leftCapture, const ConnectedComponent* leftCaptureComponent, int rightCapture, const ConnectedComponent* rightCaptureComponent, bool rangeKnown); //MAU-DEV
+  void checkFreshVariableNames();
+  static Term* findNonlinearVariable(Term* term, VariableInfo& variableInfo);
+  Symbol* findSMT_Symbol(Term* term);
+  void prettyPrintMap(Vector<int>& position, ostream& s, Term* term, int requiredPrec, int leftCapture, const ConnectedComponent* leftCaptureComponent, int rightCapture, const ConnectedComponent* rightCaptureComponent, bool rangeKnown); //MAU-DEV
 
 protected:
   static int findMatchingParen(const Vector<Token>& tokens, int pos);
-  
+
+  // We need to account rule labels here (before importing statements) because
+  // strategy statements can use them
+  set<int> ruleLabels;
+
 public:  // HACK
   enum Precedence
   {
@@ -262,14 +299,21 @@ public:  // HACK
     UNARY_PREC = 15,		// backward compatibility with OBJ3 defaults
     INFIX_PREC = 41,		// backward compatibility with OBJ3 defaults
     //
-    //	Precedences for strategy language.
+    //	Precedences for complex syntax
     //
     ASSIGNMENT_PREC = 75,
-    STRAT_TEST_PREC = 93,
-    STRAT_SEQ_PREC = 95,
-    STRAT_UNION_PREC = 97,
-    STRAT_ORELSE_PREC = 99,
-    STRAT_BRANCH_PREC = 101
+    //
+    //	Precedences for strategy language.
+    //
+    STRAT_BASIC_PREC = 0,
+    STRAT_TEST_PREC = 21,
+    STRAT_REW_PREC = 21,
+    STRAT_SEQ_PREC = 39,
+    STRAT_UNION_PREC = 41,
+    STRAT_ORELSE_PREC = 43,
+    STRAT_BRANCH_PREC = 55,
+    STRAT_USING_LIST_PREC = 61,
+    STRAT_USING_PREC = 21
   };
 
 private:
@@ -316,29 +360,30 @@ private:
     ASSIGN_PAIR = -13,
 
     LABEL = -14,
-    CONDITION_FRAGMENT = -15,
-    RULE_CONDITION_FRAGMENT = -16,
-    CONDITION = -17,
-    RULE_CONDITION = -18,
+    RULE_LABEL = -15,
+    CONDITION_FRAGMENT = -16,
+    RULE_CONDITION_FRAGMENT = -17,
+    CONDITION = -18,
+    RULE_CONDITION = -19,
 
-    MB_BODY = -19,
-    EQ_BODY = -20,
-    RL_BODY = -21,
+    MB_BODY = -20,
+    EQ_BODY = -21,
+    RL_BODY = -22,
     
-    STATEMENT_PART = -22,
-    ATTRIBUTE_PART = -23,
-    ATTRIBUTE_LIST = -24,
-    ATTRIBUTE = -25,
-    STATEMENT = -26,
+    STATEMENT_PART = -23,
+    ATTRIBUTE_PART = -24,
+    ATTRIBUTE_LIST = -25,
+    ATTRIBUTE = -26,
+    STATEMENT = -27,
 
-    ZERO = -27,
-    RATIONAL = -28,
+    ZERO = -28,
+    RATIONAL = -29,
 
-    VARIABLE = -29,
-    PRINT_ITEM = -30,
-    PRINT_LIST = -31,
+    VARIABLE = -30,
+    PRINT_ITEM = -31,
+    PRINT_LIST = -32,
 
-    SIMPLE_BASE = -32,
+    SIMPLE_BASE = -33,
     //
     //	Extra nonterminals needed to parse complex commands.
     //
@@ -347,25 +392,32 @@ private:
     SEARCH_PAIR = SIMPLE_BASE - 2,
     SUCH_THAT = SIMPLE_BASE - 3,
     STRATEGY_EXPRESSION = SIMPLE_BASE - 4,
+    STRATEGY_CALL_EXPRESSION = SIMPLE_BASE - 5,
 
-    MATCH_COMMAND = SIMPLE_BASE - 5,
-    SEARCH_COMMAND = SIMPLE_BASE - 6,
-    STRATEGY_COMMAND = SIMPLE_BASE - 7,
+    MATCH_COMMAND = SIMPLE_BASE - 6,
+    SEARCH_COMMAND = SIMPLE_BASE - 7,
+    STRATEGY_COMMAND = SIMPLE_BASE - 8,
 
-    ASSIGNMENT = SIMPLE_BASE - 8,
-    SUBSTITUTION = SIMPLE_BASE - 9,
+    ASSIGNMENT = SIMPLE_BASE - 9,
+    SUBSTITUTION = SIMPLE_BASE - 10,
 
-    STRATEGY_LIST = SIMPLE_BASE - 10,
+    STRATEGY_LIST = SIMPLE_BASE - 11,
 
-    UNIFY_PAIR = SIMPLE_BASE - 11,
-    UNIFY_COMMAND = SIMPLE_BASE - 12,
+    UNIFY_PAIR = SIMPLE_BASE - 12,
+    UNIFY_COMMAND = SIMPLE_BASE - 13,
 
-    GET_VARIANTS_COMMAND = SIMPLE_BASE - 13,
-    TERM_LIST = SIMPLE_BASE - 14,  // for command separated list of hetrogeneous terms
+    GET_VARIANTS_COMMAND = SIMPLE_BASE - 14,
+    TERM_LIST = SIMPLE_BASE - 15,  // for command separated list of hetrogeneous terms
 
-    VARIANT_UNIFY_COMMAND = SIMPLE_BASE - 15,
+    VARIANT_UNIFY_COMMAND = SIMPLE_BASE - 16,
 
-    COMPLEX_BASE = SIMPLE_BASE - 16
+    USING_PAIR = SIMPLE_BASE - 17,
+    USING_LIST = SIMPLE_BASE - 18,
+
+    SD_BODY = SIMPLE_BASE - 19,
+    STRATEGY_PAIR = SIMPLE_BASE - 20,
+
+    COMPLEX_BASE = SIMPLE_BASE - 21
   };
 
   enum NonTerminalType
@@ -377,6 +429,13 @@ private:
     ASSOC_LIST_TYPE = 3,
     SORT_LIST_TYPE = 4
   };
+
+  enum SMT_Status
+    {
+      UNCHECKED = -1,
+      BAD = 0,
+      GOOD = 1
+    };
 
   struct SymbolInfo
   {
@@ -470,8 +529,11 @@ private:
   void makeBubbleProductions();
   void computePrecAndGather(int nrArgs, SymbolInfo& si, Symbol* symbol = 0);
 
+  static Term* findNonlinearVariable(Term* term, NatSet& seenIndices);
+
   void printVariable(ostream& s, int name, Sort* sort) const;
   void graphPrint(ostream& s, DagNode* dagNode);
+
   static void printPrefixName(ostream& s, const char* prefixName, SymbolInfo& si);
   static int printTokens(ostream& s,
 			 const SymbolInfo& si,
@@ -506,7 +568,7 @@ private:
 		   bool rangeKnown,
 		   int printFlags);
 
-  static void handleVariable(Vector<int>& buffer, Term* term, int printFlags);
+  void handleVariable(Vector<int>& buffer, Term* term, int printFlags);
   bool handleIter(Vector<int>& buffer, Term* term, SymbolInfo& si, bool rangeKnown, int printFlags);
   bool handleMinus(Vector<int>& buffer, Term* term, bool rangeKnown, int printFlags);
   bool handleDivision(Vector<int>& buffer, Term* term, bool rangeKnown, int printFlags);
@@ -530,18 +592,34 @@ private:
   void printPrefixName(Vector<int>& buffer, int prefixName, SymbolInfo& si, int printFlags);
   void handleFormat(Vector<int>& buffer, int spaceToken);
 
+  //
+  //	Member functions for StrategyExpression* -> Vector<int>&  pretty printer.
+  //
+  void prettyPrint(Vector<int>& buffer,
+		   StrategyExpression* term,
+		   int requiredPrec,
+		   int printFlags);
+  void prettyPrint(Vector<int>& buffer,
+		   const Vector<ConditionFragment*>& condition,
+		   int printFlags);
+  void prettyPrint(Vector<int>& buffer,
+		   const ConditionFragment* fragment,
+		   int printFlags);
+
   static Vector<int> emptyGather;
   static Vector<int> gatherAny;
   static Vector<int> gatherAnyAny;
   static Vector<int> gatherAnyAnyAny;
+  static Vector<int> gatherAny4;
   static Vector<int> gatherPrefix;
   static Vector<int> gatherPrefixPrefix;
   static Vector<int> gatherAny0;
   static int globalIndent;
   static bool attributeUsed;
 
-  ModuleType moduleType;
+  const ModuleType moduleType;
   Sort* boolSort;
+  Sort* strategyRangeSort;
   FreeSymbol* trueSymbol;
   FreeSymbol* falseSymbol;
 
@@ -570,7 +648,7 @@ private:
   void makeCondition(int node, Vector<ConditionFragment*>& condition);
   ConditionFragment* makeConditionFragment(int node);
   void makeCommand(int node, Vector<Term*>& terms);
-  MixfixParser *parser;
+  MixfixParser* parser;
   bool complexParser;
   int componentNonTerminalBase;
   int nextNonTerminal;
@@ -633,6 +711,18 @@ private:
 
   set<pair<int, int> > overloadedVariables;
 
+  //
+  //	We keep track of symbols whose name looks like iterated notation
+  //
+  typedef multimap<mpz_class, Symbol*> NumberToSymbolMap;
+  typedef map<int, NumberToSymbolMap> PseudoIteratedMap;
+  PseudoIteratedMap pseudoIteratedMap;
+  //
+  //	We also keep track of iterated symbols.
+  //
+  typedef multimap<int, Symbol*> IteratedMap;
+  IteratedMap iteratedMap;
+
   static bool hasSameDomain(const Vector<Sort*>& domainAndRange1,
 			    bool assoc1,
 			    const Vector<Sort*>& domainAndRange2,
@@ -642,6 +732,13 @@ private:
 
   bool ambiguous(int iflags);
   static bool rangeOfArgumentsKnown(int iflags, bool rangeKnown, bool rangeDisambiguated);
+  void decideIteratedAmbiguity(bool rangeKnown,
+			       Symbol* symbol,
+			       const mpz_class& number,
+			       bool& needToDisambiguate,
+			       bool& argumentRangeKnown);
+  int checkPseudoIterated(Symbol* symbol, const Vector<Sort*>& domainAndRange);
+  void checkIterated(Symbol* symbol, const Vector<Sort*>& domainAndRange);
   //
   //	Member functions for DagNode* -> ostream& pretty printer.
   //
@@ -737,7 +834,9 @@ private:
 		   const ConnectedComponent* rightCaptureComponent,
 		   bool rangeKnown);
 
-  static bool prettyPrint(ostream& s, StrategyExpression* strategy, int requiredPrec);
+  static bool prettyPrint(ostream& s,
+			  StrategyExpression* strategy,
+			  int requiredPrec);
 
   NatSet objectSymbols;
   NatSet messageSymbols;
@@ -751,35 +850,37 @@ private:
   InternalTupleMap tupleSymbols;
 
   SMT_Info smtInfo;
+  SMT_Status smtStatus;
 
   friend ostream& operator<<(ostream& s, const Term* term);
   friend ostream& operator<<(ostream& s, DagNode* dagNode);
   friend ostream& operator<<(ostream& s, StrategyExpression* strategy);
-  
+
   /*** BEGIN MAU-DEV ***/
-  void mapPrintVariable(Vector<int>& position, ostream& s, int name, Sort* sort) const;
-  static void mapPrintPrefixName(Vector<int>& position, ostream& s, const char* prefixName, SymbolInfo& si);
-  static int mapPrintTokens(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, const char* color = 0);
-  static void mapPrintTails(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, int nrTails, bool needAssocParen, bool checkForInterrupt = false, const char* color = 0);
-  static bool mapFancySpace(Vector<int>& position, ostream& s, int spaceToken);
-  static void mapPrefix(Vector<int>& position, ostream& s, bool needDisambig, const char* color);
+  void printVariableMap(Vector<int>& position, ostream& s, int name, Sort* sort) const;
+  static void printPrefixNameMap(Vector<int>& position, ostream& s, const char* prefixName, SymbolInfo& si);
+  static int printTokensMap(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, const char* color = 0);
+  static void printTailsMap(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, int nrTails, bool needAssocParen, bool checkForInterrupt = false, const char* color = 0);
+  static bool fancySpaceMap(Vector<int>& position, ostream& s, int spaceToken);
+  static void prefixMap(Vector<int>& position, ostream& s, bool needDisambig, const char* color);
   static string getPos(Vector<int>& pos);
-  static void mapSuffix(Vector<int>& position, ostream& s, Term* term, bool needDisambig, const char* color);
-  bool mapHandleIter(Vector<int>& position, ostream& s, Term* term, SymbolInfo& si, bool rangeKnown, const char* color);
-  bool mapHandleMinus(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
-  bool mapHandleDivision(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
-  void mapHandleFloat(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
-  void mapHandleString(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
-  void mapHandleQuotedIdentifier(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
-  void mapHandleVariable(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
-  void mapHandleSMT_Number(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
+  static void suffixMap(Vector<int>& position, ostream& s, Term* term, bool needDisambig, const char* color);
+  bool handleIterMap(Vector<int>& position, ostream& s, Term* term, SymbolInfo& si, bool rangeKnown, const char* color);
+  bool handleMinusMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
+  bool handleDivisionMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
+  void handleFloatMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
+  void handleStringMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
+  void handleQuotedIdentifierMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
+  void handleVariableMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
+  void handleSMT_NumberMap(Vector<int>& position, ostream& s, Term* term, bool rangeKnown, const char* color);
   /*** END MAU-DEV ***/
 };
 
 inline SymbolType
 MixfixModule::getSymbolType(Symbol* symbol) const
 {
-  Assert(symbol->getModule() == this, "symbol belongs to " << symbol->getModule() << " and not " << this);
+  Assert(symbol->getModule() == this, "symbol " << symbol <<
+	 " belongs to " << symbol->getModule() << " and not " << this);
   return symbolInfo[symbol->getIndexWithinModule()].symbolType;
 }
 
@@ -843,6 +944,12 @@ MixfixModule::getPolymorphMetadata(int index) const
   return polymorphs[index].metadata;
 }
 
+inline Sort*
+MixfixModule::getStrategyRangeSort() const
+{
+  return strategyRangeSort;
+}
+
 inline int
 MixfixModule::getPrec(Symbol* symbol) const
 {
@@ -878,6 +985,12 @@ MixfixModule::insertPotentialLabels(const set<int>& l)
   potentialLabels = l;
 }
 
+inline void
+MixfixModule::insertPotentialRuleLabels(const set<int>& rls)
+{
+  ruleLabels.insert(rls.begin(), rls.end());
+}
+
 inline int
 MixfixModule::getNrPolymorphs() const
 {
@@ -909,11 +1022,24 @@ MixfixModule::isTheory() const
 }
 
 inline bool
+MixfixModule::isStrategic(ModuleType t)
+{
+  return t & STRATEGY;
+}
+
+inline bool
+MixfixModule::isStrategic() const
+{
+  return isStrategic(getModuleType());
+}
+
+inline bool
 MixfixModule::canImport(ModuleType t1, ModuleType t2)
 {
   //
   //	System can import anything; funtional can only import functional.
   //	Theory can import anything; module can only import module.
+  //	And then, strategy can import anything; but others cannot import them.
   //
   return (t1 | t2) == t1;
 }
@@ -925,7 +1051,7 @@ MixfixModule::canHaveAsParameter(ModuleType t1, ModuleType t2)
   //	System can be parameterized by anything; functional can only be parameterized by functional.
   //	Only theories can be parameters.
   //
-  return isTheory(t2) && ((t1 | t2) & SYSTEM)  == (t1 & SYSTEM);
+  return isTheory(t2) && (((t1 | t2) & (SYSTEM | STRATEGY)) == (t1 & (SYSTEM | STRATEGY)));
 }
 
 #endif

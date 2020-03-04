@@ -208,6 +208,7 @@ SuccSymbol::getSignedInt64(const DagNode* dagNode, Int64& value) const
     }
   return false;
 }
+
 bool
 SuccSymbol::rewriteToNat(DagNode* subject, RewritingContext& context, const mpz_class& result)
 {
@@ -216,7 +217,6 @@ SuccSymbol::rewriteToNat(DagNode* subject, RewritingContext& context, const mpz_
 
   DagNode* zero = zeroTerm.getDag();
   if (result == 0)
-    //return context.builtInReplace(subject, zero);
     return context.builtInReplaceRecord(subject, zero); //MAU-DEV
 
   bool trace = RewritingContext::getTraceStatus();

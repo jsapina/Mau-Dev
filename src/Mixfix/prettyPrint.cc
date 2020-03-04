@@ -114,16 +114,18 @@ MixfixModule::printAttributes(ostream& s, const PreEquation* pe, ItemType itemTy
   const Label& l = pe->getLabel();
   int id = l.id();
   const Equation* eq = dynamic_cast<const Equation*>(pe);
+  const Rule* rl = dynamic_cast<const Rule*>(pe);
   bool owise = eq != 0 && eq->isOwise();
   bool variant = eq != 0 && eq->isVariant();
+  bool narrowing = rl != 0 && rl->isNarrowing();
   bool nonexec = pe->isNonexec();
   int metadata = getMetadata(itemType, pe);
   const PrintAttribute* printAttribute = getPrintAttribute(itemType, pe);
 
-  if (!nonexec && !owise && !variant && id == NONE && metadata == NONE && printAttribute == 0)
+  if (!nonexec && !owise && !variant && !narrowing && id == NONE && metadata == NONE && printAttribute == 0)
     return;
   s << " [";
-  const char *space = "";
+  const char* space = "";
   if (nonexec)
     {
       s << "nonexec";
@@ -137,6 +139,11 @@ MixfixModule::printAttributes(ostream& s, const PreEquation* pe, ItemType itemTy
   if (variant)
     {
       s << space << "variant";
+      space = " ";
+    }
+  if (narrowing)
+    {
+      s << space << "narrowing";
       space = " ";
     }
   if (id != NONE)
@@ -219,6 +226,73 @@ operator<<(ostream& s, const ConditionFragment* c)
     s << r->getLhs() << " => " << r->getRhs();
   else
     CantHappen("bad condition fragment");
+  return s;
+}
+
+ostream&
+operator<<(ostream& s, const RewriteStrategy* rs)
+{
+  s << "strat " << Token::name(rs->id()) << " ";
+
+  // Prints domain sorts
+  const Vector<Sort*>& domain = rs->getDomain();
+  int arity = rs->arity();
+  if (arity > 0)
+    {
+      s << ": ";
+      for (int i = 0; i < arity; i++)
+	s << domain[i] << ' ';
+    }
+
+  s << "@ " << rs->getSubjectSort();
+  // Print attributes (only metadata is allowed)
+  MixfixModule* m = safeCast(MixfixModule*, rs->getModule());
+  int metadata = m->getMetadata(MixfixModule::STRAT_DECL, rs);
+  if (metadata != NONE)
+    s << " [metadata " << Token::name(metadata) << "] ";
+  s << " .";
+  return s;
+}
+
+inline void
+MixfixModule::printStrategyTerm(ostream& s, RewriteStrategy* strat, Term* term)
+{
+  // The term itself is not what we want to print because it contains
+  // the auxiliary symbol label instead of the strategy label
+
+  s << Token::name(strat->id());
+
+  if (strat->arity() > 0 || ruleLabels.find(strat->id()) != ruleLabels.end())
+    {
+      s << "(";
+      bool first = true;
+      for (ArgumentIterator it(*term); it.valid(); it.next())
+	{
+	  if (first)
+	    first = false;
+	  else
+	    s << ", ";
+	  s << it.argument();
+	}
+      s << ")";
+    }
+}
+
+ostream&
+operator<<(ostream& s, const StrategyDefinition* e)
+{
+  if (e->hasCondition())
+    s << 'c';
+  s << "sd ";
+  // Prints the LHS with the strategy label
+  MixfixModule* m = safeCast(MixfixModule*, e->getModule());
+  m->printStrategyTerm(s, e->getStrategy(), e->getLhs());
+  s << " := " << e->getRhs();
+  if (e->hasCondition())
+    MixfixModule::printCondition(s, e);
+
+  m->printAttributes(s, e, MixfixModule::STRAT_DEF);
+  s << " .";
   return s;
 }
 
@@ -498,192 +572,187 @@ MixfixModule::computeGraphStatus(DagNode* dagNode,
 }
 
 /*** BEGIN MAU-DEV ***/
-void MixfixModule::mapPrintVariable(Vector<int>& position, ostream& s, int name, Sort* sort) const
+void MixfixModule::printVariableMap(Vector<int>& position, ostream& s, int name, Sort* sort) const
 {
-	if (Token::isFlagged(name)) //TODO: Map
+  if (Token::isFlagged(name))
     {
-		//
-		//	Variables with flagged codes are used internally to distinguish between two variables
-		//	with identical names during disjoint unification, and might be seen in a debugging
-		//	print statement.
-		//
-		//s << "(flagged)";
-		s << "c9p" << getPos(position);
-		name = Token::unflaggedCode(name);
-	}
-	string fullName = Token::name(name);
-	int length = fullName.length();
-	if (length > 2 && fullName.substr(0,1) == "#" && fullName.substr(1,1) == "!"){
-		//fullName = "DEV-BULLET";
-		//s << fullName;
-		s << "c1p" << getPos(position);
-	}
-	else
-	{
-		//s << Token::name(name);
-		s << "c" << strlen(Token::name(name)) << "p" << getPos(position);
-		if (interpreter.getPrintFlag(Interpreter::PRINT_WITH_ALIASES))
-		{
-			AliasMap::const_iterator i = variableAliases.find(name);
-			if (i != variableAliases.end() && (*i).second == sort)
-				return;
-		}
-		//s << ':' << sort;
-		stringstream ss;
-		ss << ":" << sort;
-		string str = ss.str();
-		s << "c" << str.length() << "p" << getPos(position);
-	}
-}
-
-void MixfixModule::mapPrintPrefixName(Vector<int>& position, ostream& s, const char* prefixName, SymbolInfo& si)
-{
-	if (interpreter.getPrintFlag(Interpreter::PRINT_FORMAT) && (si.format.length() == 2))
-	{
-		mapFancySpace(position, s, si.format[0]);
-		//s << prefixName;
-		s << "c" << strlen(prefixName) << "p" << getPos(position);
-		mapFancySpace(position, s, si.format[1]);
-	}
-	else
-		//s << prefixName;
-		s << "c" << strlen(prefixName) << "p" << getPos(position);
-}
-
-int MixfixModule::mapPrintTokens(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, const char* color)
-{
-	//cout << "\nTOKENS: " << getPos(position);
-	bool noSpace = (pos == 0);
-	bool hasFormat = interpreter.getPrintFlag(Interpreter::PRINT_FORMAT) && (si.format.length() > 0);
-	for (;;)
-    {
-		int token = si.mixfixSyntax[pos++];
-		if (token == underscore)
-			break;
-		bool special = (token == leftParen || token == rightParen || token == leftBracket || token == rightBracket || token == leftBrace || token == rightBrace || token == comma);
-		if (!((hasFormat && mapFancySpace(position, s, si.format[pos - 1])) || special || noSpace))
-			//s << ' ';
-			s << "c1p" << getPos(position);
-		noSpace = special;
-		//if (color != 0)
-		//	s << color;
-		//s << Token::name(token);
-		s << "c" << strlen(Token::name(token)) << "p" << getPos(position);
-		//if (color != 0)
-		//	s << Tty(Tty::RESET);
+      //
+      //	Variables with flagged codes are used internally to distinguish between two variables
+      //	with identical names during disjoint unification, and might be seen in a debugging
+      //	print statement.	
+      //
+      s << "(flagged)";
+      name = Token::unflaggedCode(name);
     }
-	if (!((hasFormat && mapFancySpace(position, s, si.format[pos - 1])) || noSpace))
-		//s << ' ';
-		s << "c1p" << getPos(position);
-	return pos;
+  string fullName = Token::name(name);
+  int length = fullName.length();
+  if (length > 2 && fullName.substr(0,1) == "#" && fullName.substr(1,1) == "!"){
+  	  //fullName = "DEV-BULLET";
+  	  //s << fullName;
+      s << "c1p" << getPos(position);
+    }
+  else {
+  //s << Token::name(name);
+  s << "c" << strlen(Token::name(name)) << "p" << getPos(position);
+  if (interpreter.getPrintFlag(Interpreter::PRINT_WITH_ALIASES))
+    {
+      AliasMap::const_iterator i = variableAliases.find(name);
+      if (i != variableAliases.end() && (*i).second == sort)
+	return;
+    }
+  s << ':' << sort;
+  stringstream ss;
+  ss << ":" << sort;
+  string str = ss.str();
+  s << "c" << str.length() << "p" << getPos(position);
+  }
 }
 
-void MixfixModule::mapPrintTails(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, int nrTails, bool needAssocParen, bool checkForInterrupt, const char* color)
+void MixfixModule::printPrefixNameMap(Vector<int>& position, ostream& s, const char* prefixName, SymbolInfo& si)
 {
-	bool hasFormat = interpreter.getPrintFlag(Interpreter::PRINT_FORMAT) && (si.format.length() > 0);
-	int mixfixLength = si.mixfixSyntax.length();
-	for (int i = 0;;)
+  if (interpreter.getPrintFlag(Interpreter::PRINT_FORMAT) && (si.format.length() == 2))
     {
-		if (checkForInterrupt && UserLevelRewritingContext::interrupted())
-			return;
-		bool noSpace = (pos == 0);
-		for (int j = pos; j < mixfixLength; j++)
-		{
-			int token = si.mixfixSyntax[j];
-			bool special = (token == leftParen || token == rightParen || token == leftBracket || token == rightBracket || token == leftBrace || token == rightBrace || token == comma);
-			if (!((hasFormat && mapFancySpace(position, s, si.format[j])) || special || noSpace))
-				//s << ' ';
-				s << "c1p" << getPos(position);
-			noSpace = special;
-			//if (color != 0)
-			//	s << color;
-			//s << Token::name(token);
-			s << "c" << strlen(Token::name(token)) << "p" << getPos(position);
-			//if (color != 0)
-			//	s << Tty(Tty::RESET);
-		}
-		if (hasFormat)
-			(void) mapFancySpace(position, s, si.format[mixfixLength]);
-		if (++i == nrTails)
-			break;
-		if (needAssocParen)
-			//s << ')';
-			s << "c1p" << getPos(position);
+      fancySpaceMap(position, s, si.format[0]);
+      //s << prefixName;
+      s << "c" << strlen(prefixName) << "p" << getPos(position);
+      fancySpaceMap(position, s, si.format[1]);
+    }
+  else
+    //s << prefixName;
+    s << "c" << strlen(prefixName) << "p" << getPos(position);
+}
+
+int MixfixModule::printTokensMap(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, const char* color)
+{
+  bool noSpace = (pos == 0);
+  bool hasFormat = interpreter.getPrintFlag(Interpreter::PRINT_FORMAT) && (si.format.length() > 0);
+  for (;;)
+    {
+      int token = si.mixfixSyntax[pos++];
+      if (token == underscore)
+	break;
+      bool special = (token == leftParen || token == rightParen || token == leftBracket || token == rightBracket || token == leftBrace || token == rightBrace || token == comma);
+      if (!((hasFormat && fancySpaceMap(position, s, si.format[pos - 1])) || special || noSpace))
+	//s << ' ';
+    s << "c1p" << getPos(position);
+      noSpace = special;
+    //  if (color != 0)
+	//s << color;
+    //s << Token::name(token);
+    s << "c" << strlen(Token::name(token)) << "p" << getPos(position);
+    //  if (color != 0)
+	//s << Tty(Tty::RESET);
+    }
+  if (!((hasFormat && fancySpaceMap(position, s, si.format[pos - 1])) || noSpace))
+    //s << ' ';
+    s << "c1p" << getPos(position);
+  return pos;
+}
+
+void MixfixModule::printTailsMap(Vector<int>& position, ostream& s, const SymbolInfo& si, int pos, int nrTails, bool needAssocParen, bool checkForInterrupt, const char* color)
+{
+  bool hasFormat = interpreter.getPrintFlag(Interpreter::PRINT_FORMAT) && (si.format.length() > 0);
+  int mixfixLength = si.mixfixSyntax.length();
+  for (int i = 0;;)
+    {
+      if (checkForInterrupt && UserLevelRewritingContext::interrupted())
+	return;
+      bool noSpace = (pos == 0);
+      for (int j = pos; j < mixfixLength; j++)
+	{
+	  int token = si.mixfixSyntax[j];
+	  bool special = (token == leftParen || token == rightParen || token == leftBracket || token == rightBracket || token == leftBrace || token == rightBrace || token == comma);
+	  if (!((hasFormat && fancySpaceMap(position, s, si.format[j])) || special || noSpace))
+	    s << ' ';
+	  noSpace = special;
+	  //if (color != 0)
+	  //  s << color;
+	  //s << Token::name(token);
+      s << "c" << strlen(Token::name(token)) << "p" << getPos(position);
+	  //if (color != 0)
+	  //  s << Tty(Tty::RESET);
+	}
+      if (hasFormat)
+	(void) fancySpaceMap(position, s, si.format[mixfixLength]);
+      if (++i == nrTails)
+	break;
+      if (needAssocParen)
+	  //s << ')';
+      s << "c1p" << getPos(position);
     }
 }
 
-bool MixfixModule::mapFancySpace(Vector<int>& position, ostream& s, int spaceToken)
+bool MixfixModule::fancySpaceMap(Vector<int>& position, ostream& s, int spaceToken)
 {
-	bool space = false;
-	for (const char* cmd = Token::name(spaceToken); *cmd; cmd++)
+  bool space = false;
+  for (const char* cmd = Token::name(spaceToken); *cmd; cmd++)
     {
-		char c = *cmd;
-		switch (c)
+      char c = *cmd;
+      switch (c)
+	{
+	case '+':
+	  {
+	    ++globalIndent;
+	    break;
+	  }
+	case '-':
+	  {
+	    if (globalIndent > 0)
+	      --globalIndent;
+	    break;
+	  }
+	case 'n':
+	  {
+	    //s << '\n';
+        s << "c1p" << getPos(position);
+	    space = true;
+	    break;
+	  }
+	case 't':
+	  {
+	    //s << '\t';
+        s << "c1p" << getPos(position);
+	    space = true;
+	    break;
+	  }
+	case 's':
+	  {
+	    //s << ' ';
+        s << "c1p" << getPos(position);
+	    space = true;
+	    break;
+	  }
+	case 'i':
+	  {
+	    if (globalIndent > 0)
+	      {
+		for (int i = 0; i < globalIndent; i++)
+		  //s << ' ';
+          s << "c1p" << getPos(position);
+		space = true;
+	      }
+	    break;
+	  }
+	default:
+	  {
+	    if (interpreter.getPrintFlag(Interpreter::PRINT_COLOR))
+	      break;
+	    switch (c)
+	      {
+#define MACRO(m, t) \
+case m: { s << Tty(Tty::t); attributeUsed = true; break; }
+#include "ansiEscapeSequences.cc"
+#undef MACRO
+	      case 'o':
 		{
-			case '+':
-			{
-				++globalIndent;
-				break;
-			}
-			case '-':
-			{
-				if (globalIndent > 0)
-					--globalIndent;
-				break;
-			}
-			case 'n':
-			{
-				//s << '\n';
-				s << "c1p" << getPos(position);
-				space = true;
-				break;
-			}
-			case 't':
-			{
-				//s << '\t';
-				s << "c1p" << getPos(position);
-				space = true;
-				break;
-			}
-			case 's':
-			{
-				//s << ' ';
-				s << "c1p" << getPos(position);
-				space = true;
-				break;
-			}
-			case 'i':
-			{
-				if (globalIndent > 0)
-				{
-					for (int i = 0; i < globalIndent; i++)
-						//s << ' ';
-						s << "c1p" << getPos(position);
-					space = true;
-				}
-				break;
-			}
-			default:
-			{
-				if (interpreter.getPrintFlag(Interpreter::PRINT_COLOR))
-					break;
-				switch (c)
-				{
-					#define MACRO(m, t) \
-						case m: { s << Tty(Tty::t); attributeUsed = true; break; }
-					#include "ansiEscapeSequences.cc"
-					#undef MACRO
-					case 'o':
-					{
-						//s << Tty(Tty::RESET);
-						//TODO: Map?
-						break;
-					}
-				}
-				break;
-			}
+		  //s << Tty(Tty::RESET);
+		  break;
 		}
+	      }
+	    break;
+	  }
 	}
-	return space;
+    }
+  return space;
 }
 /*** END MAU-DEV ***/

@@ -44,7 +44,7 @@ public:
 			    Vector<Symbol*>& symbols);
 
   bool extractOutput(DagNode* loopNode, Vector<int>& bubble);
-  DagNode* injectInput(DagNode* loopNode, const Vector<Token>& bubble);
+  void injectInput(DagNode* loopNode, const Vector<Token>& bubble);
 
 private:
   NO_COPYING(LoopSymbol);

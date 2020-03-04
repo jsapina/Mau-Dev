@@ -127,7 +127,7 @@ SortTable::sortErrorAnalysis(bool preregProblem,
 
   ComplexWarning((preregProblem ? "sort" : "constructor") <<
 	       " declarations for operator " <<
-	       QUOTE(safeCast(Symbol*, this)) << " failed " <<
+		 QUOTE(safeCastNonNull<Symbol*>(this)) << " failed " <<
 	       (preregProblem ? "preregularity" : "constructor consistency") <<
 	       " check on " << badCount << " out of " << product <<
 	       " sort tuples. First such tuple is (");

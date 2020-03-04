@@ -37,7 +37,7 @@ public:
   ImportModule* makeRenamedCopy(ImportModule* module, Renaming* renaming);
   ImportModule* makeSummation(const Vector<ImportModule*>& modules);
   ImportModule* makeParameterCopy(int parameterName, ImportModule* module);
-  ImportModule* makeInstatiation(ImportModule* module, const Vector<View*>& views, const Vector<int>& parameterArgs);
+  ImportModule* makeModuleInstantiation(ImportModule* module, const Vector<Argument*>& arguments);
 
   void destructUnusedModules();
   void showCreatedModules(ostream& s) const;

@@ -248,8 +248,7 @@ ACU_NumberOpSymbol::eqRewrite2(DagNode* subject, RewritingContext& context)
 	    {
 	      return (accumulator >= 0) ?
 		succSymbol->rewriteToNat(subject, context, accumulator) :
-		//context.builtInReplace(subject, minusSymbol->makeNegDag(accumulator));
-        context.builtInReplaceRecord(subject, minusSymbol->makeNegDag(accumulator)); //MAU-DEV
+		context.builtInReplaceRecord(subject, minusSymbol->makeNegDag(accumulator)); //MAU-DEV
 	    }
 	  //
 	  //	Not everything was a number - need to make a new dag node by
@@ -268,8 +267,7 @@ ACU_NumberOpSymbol::eqRewrite2(DagNode* subject, RewritingContext& context)
           dagNodes[j] = (accumulator >= 0) ? succSymbol->makeNatDag(accumulator) :
 	    minusSymbol->makeNegDag(accumulator);
           multiplicities[j] = 1;
-          //return context.builtInReplace(subject,makeDagNode(dagNodes, multiplicities));
-          return context.builtInReplaceRecord(subject,makeDagNode(dagNodes, multiplicities)); //MAU-DEV
+          return context.builtInReplaceRecord(subject, makeDagNode(dagNodes, multiplicities)); //MAU-DEV
 	}
     }
   return ACU_Symbol::eqRewrite(subject, context);

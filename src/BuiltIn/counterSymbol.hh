@@ -41,16 +41,16 @@ public:
 			  Vector<const char*>& purposes,
 			  Vector<Vector<const char*> >& data);
   void resetRules();
-  void saveHiddenState();
-  void restoreHiddenState();
+  //void saveHiddenState();
+  //void restoreHiddenState();
   bool eqRewrite(DagNode* subject, RewritingContext& context);
   DagNode* ruleRewrite(DagNode* subject, RewritingContext& context);
 
 private:
-  typedef stack<mpz_class, list<mpz_class> > MpzStack;  // optimize for the empty case
+  //typedef stack<mpz_class, list<mpz_class> > MpzStack;  // optimize for the empty case
 
   mpz_class currentValue;
-  MpzStack currentValueStack;
+  // MpzStack currentValueStack;
 };
 
 #endif

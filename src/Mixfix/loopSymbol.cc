@@ -126,16 +126,20 @@ LoopSymbol::getSymbolAttachments(Vector<const char*>& purposes,
   FreeSymbol::getSymbolAttachments(purposes, symbols);
 }
 
-DagNode*
+void
 LoopSymbol::injectInput(DagNode* loopNode, const Vector<Token>& bubble)
 {
-  static Vector<DagNode*> args(3);
-
   FreeDagNode* f = static_cast<FreeDagNode*>(loopNode);
+  Vector<DagNode*> args(3);
   args[0] = createQidList(bubble);
   args[1] = f->getArgument(1);
   args[2] = new FreeDagNode(nilQidListSymbol);
-  return makeDagNode(args);
+  DagNode* n =  makeDagNode(args);
+  //
+  //    We assume that loopNode is a root with no other users so
+  //    we can overwrite it in place.
+  //
+  n->overwriteWithClone(loopNode);
 }
 
 DagNode*
@@ -164,8 +168,7 @@ LoopSymbol::extractQid(DagNode* metaQid, int& id)
 {
   if (metaQid->symbol() == qidSymbol)
     {
-      id =
-	Token::unBackQuoteSpecials(static_cast<QuotedIdentifierDagNode*>(metaQid)->getIdIndex());
+      id = Token::unBackQuoteSpecials(static_cast<QuotedIdentifierDagNode*>(metaQid)->getIdIndex());
       return true;
     }
   return false;

@@ -73,8 +73,7 @@ VariableTerm::deepSelfDestruct()
 Term*
 VariableTerm::deepCopy2(SymbolMap* translator) const
 {
-  VariableSymbol* vs = safeCast(VariableSymbol*,
-				(translator == 0 ? symbol() : translator->translate(symbol())));
+  VariableSymbol* vs = safeCastNonNull<VariableSymbol*>((translator == 0 ? symbol() : translator->translate(symbol())));
   return new VariableTerm(vs, id());
 }
 
@@ -95,13 +94,13 @@ VariableTerm::normalize(bool /* full */, bool& changed)
 int
 VariableTerm::compareArguments(const Term* other) const
 {
-  return id() - safeCast(const VariableTerm*, other)->id();
+  return id() - safeCastNonNull<const VariableTerm*>(other)->id();
 }
 
 int
 VariableTerm::compareArguments(const DagNode* other) const
 {
-  return id() - safeCast(const VariableDagNode*, other)->id();
+  return id() - safeCastNonNull<const VariableDagNode*>(other)->id();
 }
 
 void
@@ -150,7 +149,7 @@ VariableTerm::subsumes(const Term* other, bool sameVariableSet) const
   //
   if (sameVariableSet &&
       symbol() == other->symbol() &&
-      id() == safeCast(const VariableTerm*, other)->id())
+      id() == safeCastNonNull<const VariableTerm*>(other)->id())
     return true;
   //
   //	Otherwise a variable must be linear and have large enough

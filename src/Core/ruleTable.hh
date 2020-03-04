@@ -38,8 +38,8 @@ public:
   virtual void compileRules();
   virtual DagNode* ruleRewrite(DagNode* subject, RewritingContext& context);
   virtual void resetRules();
-  virtual void saveHiddenState();
-  virtual void restoreHiddenState();
+  //virtual void saveHiddenState();
+  //virtual void restoreHiddenState();
 
 protected:
   virtual bool acceptRule(Rule* rule) = 0;
@@ -49,11 +49,11 @@ protected:
   void resetEachRule();
 
 private:
-  typedef stack<int, list<int> > IntStack;  // optimize for the empty case
+  //typedef stack<int, list<int> > IntStack;  // optimize for the empty case
 
   Vector<Rule*> rules;
   int nextRule;
-  IntStack nextRuleStack;
+  //IntStack nextRuleStack;
 };
 
 inline const Vector<Rule*>&

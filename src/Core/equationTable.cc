@@ -100,7 +100,7 @@ EquationTable::applyReplace(DagNode* subject,
 	            DagNode* replacement = eq->getRhsBuilder().construct(context);
 	            subject->partialReplace(replacement,extensionInfo);
 	            replacement->setHole();
-	            context.saveContext(redex);
+	            context.saveContext(replacement); //FIX-CONTEXT
 	            replacement->clearHole();
 	        }
 	        context.saveEquation(eq->getIndexWithinModule());
@@ -109,7 +109,7 @@ EquationTable::applyReplace(DagNode* subject,
 	    {
 	    /*** END MAU-DEV ***/
 	      if (extensionInfo == 0 || extensionInfo->matchedWhole())
-            eq->getRhsBuilder().replace(subject, context);
+		eq->getRhsBuilder().replace(subject, context);
 	      else
 		{
 		  subject->partialReplace(eq->getRhsBuilder().construct(context),
@@ -166,14 +166,14 @@ EquationTable::applyReplace(DagNode* subject,
 		    		DagNode* replacement = eq->getRhsBuilder().construct(context);
 		    		subject->partialReplace(replacement,extensionInfo);
 		    		replacement->setHole();
-		    		context.saveContext(redex);
+		    		context.saveContext(replacement); //FIX-CONTEXT
 		    		replacement->clearHole();
 		    	}
 		    	context.saveEquation(eq->getIndexWithinModule());
 		    }
 		    else
 		    {
-		      /*** END MAU-DEV ***/
+		    /*** END MAU-DEV ***/
 		      if (extensionInfo == 0 || extensionInfo->matchedWhole())
 			eq->getRhsBuilder().replace(subject, context);
 		      else
@@ -243,7 +243,7 @@ EquationTable::applyReplaceNoOwise(DagNode* subject,
 	    		DagNode* replacement = eq->getRhsBuilder().construct(context);
 	    		subject->partialReplace(replacement,extensionInfo);
 	    		replacement->setHole();
-	    		context.saveContext(redex);
+	    		context.saveContext(replacement); //FIX-CONTEXT
 	    		replacement->clearHole();
 	        }
 	    	context.saveEquation(eq->getIndexWithinModule());
@@ -307,7 +307,7 @@ EquationTable::applyReplaceNoOwise(DagNode* subject,
 		    		DagNode* replacement = eq->getRhsBuilder().construct(context);
 		    		subject->partialReplace(replacement,extensionInfo);
 		    		replacement->setHole();
-		    		context.saveContext(redex);
+		    		context.saveContext(replacement); //FIX-CONTEXT
 		    		replacement->clearHole();
 		    	}
 		    	context.saveEquation(eq->getIndexWithinModule());

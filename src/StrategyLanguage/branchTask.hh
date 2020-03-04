@@ -28,7 +28,6 @@
 #define _branchTask_hh_
 #include "strategicTask.hh"
 #include "branchStrategy.hh"
-#include "strategyStackManager.hh"
 
 class BranchTask : public StrategicTask
 {

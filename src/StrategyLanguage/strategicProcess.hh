@@ -36,6 +36,7 @@ public:
   ~StrategicProcess();
 
   StrategicProcess* getNextProcess() const;
+  StrategicProcess* getPrevProcess() const;
   virtual Survival run(StrategicSearch& searchObject) = 0;
 
 private:
@@ -47,6 +48,12 @@ inline StrategicProcess*
 StrategicProcess::getNextProcess() const
 {
   return next;
+}
+
+inline StrategicProcess*
+StrategicProcess::getPrevProcess() const
+{
+  return prev;
 }
 
 #endif

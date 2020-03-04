@@ -26,6 +26,8 @@
 #ifndef _core_hh_
 #define _core_hh_
 
+class MemoryBlock;
+class MemoryInfo;
 class MemoryCell;
 class NamedEntity;
 class ModuleItem;
@@ -46,6 +48,8 @@ class ExtensionMatchSubproblem;
 class EqualitySubproblem;
 class PreEquation;
 class Equation;
+class StrategyDefinition;
+class RewriteStrategy;
 class Rule;
 class Label;
 class SortConstraint;

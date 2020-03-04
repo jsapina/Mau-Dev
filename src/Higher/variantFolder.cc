@@ -67,11 +67,19 @@ VariantFolder::markReachableNodes()
       Vector<DagNode*>& variant = i->second->variant;
       FOR_EACH_CONST(j, Vector<DagNode*>, variant)
 	(*j)->mark();
+      /*** BEGIN MAU-DEV ***/
+      Vector<DagNode*>& variantExtOld = i->second->variantExtOld;
+      FOR_EACH_CONST(k, Vector<DagNode*>, variantExtOld)
+        (*k)->mark();
+      Vector<DagNode*>& variantExtSub = i->second->variantExtSub;
+      FOR_EACH_CONST(l, Vector<DagNode*>, variantExtSub)
+        (*l)->mark();
+      /*** END MAU-DEV ***/
     }
 }
 
 bool
-VariantFolder::insertVariant(const Vector<DagNode*>& variant, int index, int parentIndex)
+VariantFolder::insertVariant(const Vector<DagNode*>& variantExtOld, const Vector<DagNode*>& variantExtSub, int variantEq, const Vector<DagNode*>& variant, int index, int parentIndex, int variableFamily) //MAU-DEV
 {
   //cerr << " i" << index << "p" << parentIndex;
   //
@@ -91,6 +99,16 @@ VariantFolder::insertVariant(const Vector<DagNode*>& variant, int index, int par
   //	Compile a set of matching automata for this variant.
   //
   RetainedVariant* newVariant = new RetainedVariant(variant);
+  
+  /*** BEGIN MAU-DEV ***/
+  if (variantExtOld.size() > 0)
+      newVariant->variantExtOld = variantExtOld;
+  newVariant->variantEq = variantEq;
+  if (variantExtSub.size() > 0)
+      newVariant->variantExtSub = variantExtSub;
+  newVariant->variantEq = variantEq;
+  /*** END MAU-DEV ***/
+  
   //
   //	Compute ancestor set.
   //
@@ -159,6 +177,7 @@ VariantFolder::insertVariant(const Vector<DagNode*>& variant, int index, int par
   //
   //cerr << "*";
   newVariant->parentIndex = parentIndex;
+  newVariant->variableFamily = variableFamily;
   newVariant->layerNumber = 0;
   if (parentIndex != NONE)
     {
@@ -171,65 +190,16 @@ VariantFolder::insertVariant(const Vector<DagNode*>& variant, int index, int par
   return true;
 }
 
-/*
-const Vector<DagNode*>* 
-VariantFolder::getNextSurvivingVariant(int& nrFreeVariables, bool& moreInLayer)
-{
-  //
-  //	We allow variants to be extracted, even though we may not be finished inserting new variants.
-  //	This means that some of the variants we return may later be evicted by a subsequent insert().
-  //
-  //	Between calls we keep track of current and next variant by their internal index numbers rather
-  //	than iterators into mostGeneralSoFar. This is because in prinicple, the element pointed to by
-  //	an iterator might vanish due to subsumption.
-  //	Though even here we have a problem since we do expect to be able to access the variant at
-  //	nextVariantIndex.
-  //
-  RetainedVariantMap::const_iterator currentVariant;
-  
-  if (currentVariantIndex == NONE)
-    {
-      //
-      //	Starting so need to find the first variant.
-      //
-      RetainedVariantMap::const_iterator currentVariant = mostGeneralSoFar.upper_bound(currentVariantIndex);  // might simplify this
-      if (currentVariant == mostGeneralSoFar.end())
-	return 0;  // no variants available so change nothing
-      currentVariantIndex = currentVariant->first;
-    }
-  else
-    {
-      //
-      //	If there is a next variant, we already found it.
-      //
-      if (nextVariantIndex == NONE)
-	return 0; // no next variant
-      currentVariantIndex = nextVariantIndex;
-      RetainedVariantMap::const_iterator currentVariant = mostGeneralSoFar.find(currentVariantIndex);  // extra lookup
-    }
-  //
-  //	Now we need to find the next variant if there is one, so we know if there is moreInLayer.
-  //
-  RetainedVariantMap::const_iterator nextVariant = mostGeneralSoFar.upper_bound(currentVariantIndex);  // look ahead
-  if (nextVariant == mostGeneralSoFar.end())
-    {
-      nextVariantIndex = NONE;
-      moreInLayer = false;
-    }
-  else
-    {
-      nextVariantIndex = nextVariant->first;
-      moreInLayer = true;
-    }
-  
-  nrFreeVariables = currentVariant->second->nrFreeVariables;
-  return &(currentVariant->second->variant);
-}
-*/
-
-
 const Vector<DagNode*>*
-VariantFolder::getNextSurvivingVariant(int& nrFreeVariables, int* variantNumber, int* parentNumber, bool* moreInLayer)
+VariantFolder::getNextSurvivingVariant(
+                       Vector<DagNode*>& variantExtOld, //MAU-DEV
+                       Vector<DagNode*>& variantExtSub, //MAU-DEV
+                       int& variantEq, //MAU-DEV
+                       int& nrFreeVariables,
+				       int& variableFamily,
+				       int* variantNumber,
+				       int* parentNumber,
+				       bool* moreInLayer)
 {
   RetainedVariantMap::const_iterator nextVariant = mostGeneralSoFar.upper_bound(currentVariantIndex);
   if (nextVariant == mostGeneralSoFar.end())
@@ -237,6 +207,7 @@ VariantFolder::getNextSurvivingVariant(int& nrFreeVariables, int* variantNumber,
 
   currentVariantIndex = nextVariant->first;
   nrFreeVariables = nextVariant->second->nrFreeVariables;
+  variableFamily = nextVariant->second->variableFamily;
   //
   //	Optional information - non-null pointers means caller wants this information
   //	returned.
@@ -245,6 +216,13 @@ VariantFolder::getNextSurvivingVariant(int& nrFreeVariables, int* variantNumber,
     *variantNumber = currentVariantIndex;  // internal number for current variant
   if (parentNumber)
     *parentNumber = nextVariant->second->parentIndex;  // internal number for variant's parent (or NONE if root)
+  
+  /*** BEGIN MAU-DEV ***/
+  variantExtOld = nextVariant->second->variantExtOld;
+  variantExtSub = nextVariant->second->variantExtSub;
+  variantEq = nextVariant->second->variantEq;
+  /*** END MAU-DEV ***/
+  
   if (moreInLayer)
     {
       //
@@ -262,17 +240,32 @@ VariantFolder::getNextSurvivingVariant(int& nrFreeVariables, int* variantNumber,
 }
 
 const Vector<DagNode*>*
-VariantFolder::getLastReturnedVariant(int& nrFreeVariables, int* parentNumber, bool* moreInLayer)
+VariantFolder::getLastReturnedVariant(
+                      Vector<DagNode*>& variantExtOld, //MAU-DEV
+                      Vector<DagNode*>& variantExtSub, //MAU-DEV
+                      int& variantEq, //MAU-DEV
+                      int& nrFreeVariables,
+				      int& variableFamily,
+				      int* parentNumber,
+				      bool* moreInLayer)
 {
   RetainedVariantMap::const_iterator currentVariant = mostGeneralSoFar.find(currentVariantIndex);
   Assert(currentVariant != mostGeneralSoFar.end(), "current variant purged");
   nrFreeVariables = currentVariant->second->nrFreeVariables;
+  variableFamily = currentVariant->second->variableFamily;
   //
   //	Optional information - non-null pointers means caller wants this information
   //	returned.
   //
   if (parentNumber)
     *parentNumber = currentVariant->second->parentIndex;  // internal number for variant's parent (or NONE if root)
+  
+  /*** BEGIN MAU-DEV ***/
+  variantExtOld = currentVariant->second->variantExtOld;
+  variantExtSub = currentVariant->second->variantExtSub;
+  variantEq = currentVariant->second->variantEq;
+  /*** END MAU-DEV ***/
+  
   if (moreInLayer)
     {
       //
@@ -383,7 +376,7 @@ VariantFolder::RetainedVariant::RetainedVariant(const Vector<DagNode*> original)
       //matchingAutomata[i]->dump(cerr, variableInfo);
     }
 
-  nrVariables = variableInfo.getNrRealVariables();  // may also have some abstraction variables
+  nrVariables = variableInfo.getNrProtectedVariables();  // may also have some abstraction variables
 }
 
 VariantFolder::RetainedVariant::~RetainedVariant()
@@ -394,6 +387,10 @@ VariantFolder::RetainedVariant::~RetainedVariant()
       delete matchingAutomata[i];
       terms[i]->deepSelfDestruct();
     }
+  /*** BEGIN MAU-DEV ***/
+  Vector<DagNode*>().swap(variantExtOld);
+  Vector<DagNode*>().swap(variantExtSub);
+  /*** END MAU-DEV ***/
 }
 
 void

@@ -1,8 +1,8 @@
-The official Maude release was written by:
-Steven Eker	<eker@csl.sri.com>
+Steven Eker <eker@csl.sri.com>
 
-The MSCP10 beta-extended CFG parser was written by:
-Jose-Francisco Quesada	<jquesada@cica.es>
+Extensions to the strategy language and its reflection in the
+functional metalevel implemented by:
+Rubén Rafael Rubio Cuéllar <rubenrub@ucm.es>
 
-This Mau-Dev extension was written/adapted by:
-by Julia Sapiña <jsapina@dsic.upv.es>
+Mau-Dev extension written/adapted by:
+Julia Sapiña <jsapina@upv.es>
