@@ -231,7 +231,7 @@ private:
     //	We can share a the same bit for this flag since the rule rewriting strategy that needs UNREWRITABLE will
     //	never be combined with variant narrowing.
     //
-    HOLE = 4,  //MAU-DEV
+    HOLE = 8,  //MAU-DEV
     IRREDUCIBLE_BY_VARIANT_EQUATIONS = 4
   };
 
